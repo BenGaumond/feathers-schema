@@ -1,5 +1,5 @@
 export default function() {
 
-  const app = this
+  //const app = this
 
 }

@@ -1,6 +1,4 @@
+lib
 node_modules
-
-cache/portfolios.json
-cache/videos.json
-.env
 .DS_Store
+dev-server

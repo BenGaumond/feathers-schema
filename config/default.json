@@ -1,12 +1,5 @@
 {
   "host": "localhost",
-  "port": 8000,
-  "public": "../dist-client/",
-  "auth": {
-    "idField": "id",
-    "token": {
-      "secret": "5xjJW5WW6quxxlTuNT8DkXVkCrZwGSDEXYYYQlWZ+onVCdkdlVJzGpa35vGFxSkxVLZSPCtlsykjezQKfnQrLw=="
-    },
-    "local": {}
-  }
+  "port": 3000,
+  "public": "../src-dev/client/"
 }
