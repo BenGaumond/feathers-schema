@@ -4,10 +4,11 @@
   "description": "Model structure/validation for feathers.js",
   "main": "lib",
   "scripts": {
-    "test": "mocha --compilers js:babel-core/register 'test/**/*.@(js|jsx)'",
-    "create-readme": "./node_modules/.bin/jsdoc2md \"src/*.{js,md}\" > ./src/api.md; cat ./src/api-intro.md ./src/api.md > README.md",
-    "develop-client": "webpack-dev-server --config config/webpack.js",
-    "develop-server": "node_modules/.bin/babel ./src-dev/server --watch --out-dir dev-server  & ./node_modules/.bin/nodemon --watch dev-server dev-server"
+    "test": "mocha --require babel-register 'test/tests/**/*.@(js|jsx)'",
+    "test:watch": "mocha --require babel-register --watch 'test/tests/**/*.@(js|jsx)'",
+    "create-readme": "./node_modules/.bin/jsdoc2md \"src/*.{js,md}\" > api.md; cat api-intro.md api.md > README.md",
+    "build": "rm -rf lib; mkdir lib; node_modules/.bin/babel src --out-dir lib",
+    "bulid:watch": "npm run build -- --watch"
   },
   "repository": {
     "type": "git",
@@ -26,31 +27,29 @@
   },
   "homepage": "https://github.com/BenGaumond/feathers-schema#readme",
   "devDependencies": {
+    "app-module-path": "^2.2.0",
     "babel": "^6.5.2",
     "babel-cli": "^6.18.0",
     "babel-eslint": "^7.1.1",
     "babel-loader": "^6.2.10",
-    "babel-preset-es2015-node": "^6.1.1",
+    "babel-preset-es2015": "^6.18.0",
     "babel-preset-stage-0": "^6.16.0",
-    "body-parser": "^1.15.2",
-    "chia": "0.0.1",
-    "css-loader": "^0.26.1",
+    "babel-register": "^6.18.0",
+    "chai": "^3.5.0",
+    "cli-clear": "^1.0.4",
     "eslint": "^3.13.1",
     "eslint-plugin-react": "^6.9.0",
     "feathers": "^2.0.3",
     "feathers-configuration": "^0.4.1",
-    "feathers-errors": "^2.5.0",
     "feathers-hooks": "^1.7.1",
+    "feathers-memory": "^1.0.1",
     "feathers-rest": "^1.6.0",
-    "file-loader": "^0.9.0",
     "jsdoc-to-markdown": "^2.0.1",
     "mocha": "^3.2.0",
-    "node-sass": "^4.2.0",
-    "nodemon": "^1.11.0",
-    "resolve-url-loader": "^1.6.1",
-    "sass-loader": "^4.1.1",
-    "style-loader": "^0.13.1",
-    "webpack": "^1.14.0",
-    "webpack-dev-server": "^1.16.2"
+    "nodemon": "^1.11.0"
+  },
+  "dependencies": {
+    "is-explicit": "^1.1.0",
+    "feathers-errors": "^2.5.0"
   }
 }

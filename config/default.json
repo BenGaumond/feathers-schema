@@ -1,5 +1,0 @@
-{
-  "host": "localhost",
-  "port": 3000,
-  "public": "../src-dev/client/"
-}

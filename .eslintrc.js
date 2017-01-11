@@ -31,6 +31,7 @@ module.exports = {
     ],
     'no-var': 'error',
     'prefer-const': 'error',
+    'no-extra-parens': 'warn',
     'linebreak-style': [
       'error',
       'unix'

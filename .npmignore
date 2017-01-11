@@ -8,3 +8,4 @@ test
 webpack.config.js
 documentation
 dev-server
+playground.js
