@@ -21,7 +21,7 @@ function smartIn(obj, paths, smart) {
 
   const get = smart === $GET
   const has = smart === $HAS
-  const set = arguments.length > 2 && !get && !has
+  const set = arguments.length >= 2 && !get && !has
 
   for (let i = 0; i < paths.length; i++) {
     const path = paths[i]
@@ -31,7 +31,7 @@ function smartIn(obj, paths, smart) {
            : get ? obj[path]
            :/*set*/void (obj[path] = smart)
 
-    if (!is(obj, Object))
+    if (!is(obj[path], Object))
       if (set)
         obj[path] = {}
       else
@@ -106,7 +106,7 @@ export function castTo(value, type) {
   switch (type) {
 
   case String:
-    return is(value) ? value + '' : ''
+    return !is(value, Object) ? String(value) : value
 
   case Number:
     return parseFloat(value)
@@ -115,10 +115,10 @@ export function castTo(value, type) {
     return !!value
 
   case Date:
-    return is(value) ? new Date(value) : null
+    return is(value, String, Number) ? new Date(value) : value
 
   case ObjectId:
-    return is(value) ? new ObjectId(String(value)) : null
+    return is(value, String) ? new ObjectId(value) : value
 
   default:
     throw new NotImplemented(`Cannot cast to ${type}`)

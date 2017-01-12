@@ -1,3 +1,4 @@
 import _default from './default'
+import type from './type'
 
-export { _default as default }
+export { type, _default as default }

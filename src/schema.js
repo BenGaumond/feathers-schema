@@ -28,39 +28,17 @@ function addCustom(defs, key, arr) {
 
   const custom = is(def, Array) ? def : [def]
   arr.push(...custom)
-  delete defs[key]
 
 }
 
 function addStock(def, stock, arr) {
   for (const key in stock)
-    if (key in def) {
+    if (key in def)
       arr.push(stock[key](def[key]))
-      delete def[key]
-    }
-}
-
-function checkForNested(def, funcCount) {
-
-  const hasNested = 'nested' in def
-  if (hasNested && !isPlainObject(def.nested))
-    throw new Error('nested property must be a plain object.')
-  else if (hasNested)
-    return def.nested
-
-  const implicitNested = funcCount === 0
-  if (!implicitNested)
-    return null
-
-  const implicit = {}
-  for (const key of Object.keys(def))
-    implicit[key] = def[key]
-
-  return implicit
 
 }
 
-function createDefinition(schema, definition, path) {
+function createProperty(schema, definition, path) {
 
   //cast path to arrayOf if it isn't already
   if (!is(path, Array))
@@ -92,7 +70,6 @@ function createDefinition(schema, definition, path) {
   addCustom(definition, 'validates', validators)
   addCustom(definition, 'validate', validators)
 
-
   //get stock and custom sanitizer
   const sanitizers = []
 
@@ -100,28 +77,24 @@ function createDefinition(schema, definition, path) {
   addCustom(definition, 'sanitizes', sanitizers)
   addCustom(definition, 'sanitize', sanitizers)
 
-  const nested = checkForNested(definition, sanitizers.length + validators.length)
-  if (nested && !isPlainObject(nested))
-    throw new Error('Nested properties must be plain objects.')
-  if (nested) {
-
-    for (const key in nested)
-      createDefinition(schema, nested[key], [...path, key])
+  const noFuncs = sanitizers.length + validators.length === 0
+  const createNested = noFuncs && Object.keys(definition).length > 0
+  if (createNested && !arrayOf) {
+    for (const key in definition)
+      createProperty(schema, definition[key], [...path, key])
 
     return
-  }
+  } else if (createNested && arrayOf) {
+    throw new Error('Nesting arrays of properties not yet implemented.')
 
-  console.log(nested, sanitizers, validators)
+  } else if (noFuncs)
+    throw new Error('Malformed definition: Definition passed with no properties.')
 
-  else if (sanitizers.length === 0 && validators.length === 0)
-    throw new Error(`Malformed definition. No properties defined in ${path}`)
-
-  //finish up
-  setIn(schema.sanitizers, path, sanitizers)
-
-  setIn(schema.validators, path, validators)
-
-  schema.paths.push(path)
+  schema.properties.push({
+    path,
+    validators,
+    sanitizers
+  })
 
 }
 
@@ -131,7 +104,7 @@ function createDefinition(schema, definition, path) {
 
 export default class Schema {
 
-  constructor(definitions, options) {
+  constructor(properties, options) {
 
     //Check options
     if (is(options) && !isPlainObject(options))
@@ -145,12 +118,12 @@ export default class Schema {
     if (!is(this.options.canSkipValidation, Function))
       throw new Error('Schema options.canSkipValidation is expected to be a boolean or a predicate function.')
 
-    //Create definitions
-    if (!isPlainObject(definitions))
-      throw new Error('A schema must be created with a model definitions object.')
+    //Create properties
+    if (!isPlainObject(properties))
+      throw new Error('A model must be created with a model properties object.')
 
-    for (const path in definitions)
-      createDefinition(this, definitions[path], path)
+    for (const path in properties)
+      createProperty(this, properties[path], path)
 
     deepFreeze(this)
   }
@@ -161,7 +134,7 @@ export default class Schema {
     //this ensures that no data will be passed that isn't defined in the schema
     const sanitized = {}
 
-    for (const path of this.paths) {
+    for (const { path, sanitizers } of this.properties) {
 
       //for each path in the schema, get the equivalent value in the hook data,
       //consolidating empty or undefined values to null
@@ -169,7 +142,6 @@ export default class Schema {
       if (value === undefined || value === '')
         value = null
 
-      const sanitizers = getIn(this.sanitizers, path)
       for (const sanitizer of sanitizers)
         //run the value through all of the sanitizers in this path
         value = await sanitizer(value, params)
@@ -184,12 +156,11 @@ export default class Schema {
 
     let errors = null
 
-    for (const path of this.paths) {
+    for (const { path, validators } of this.properties) {
 
       //for each path in the schema get the equivalent value in the data
       const value = getIn(data, path)
 
-      const validators = getIn(this.validators, path)
       for (const validator of validators) {
 
         //run the value against every validator in this path
@@ -210,11 +181,7 @@ export default class Schema {
     return errors
   }
 
-  sanitizers = {}
-
-  validators = {}
-
-  paths = []
+  properties = []
 
   applyHook = sanitizeAndValidate(this)
 

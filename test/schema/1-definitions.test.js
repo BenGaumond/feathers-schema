@@ -6,7 +6,7 @@ import { assert  } from 'chai'
 // const shouldNotThrow = obj => expect(() => new Schema(obj)).to.not.throw(Error)
 
 function createValidator(obj) {
-  return new Schema(obj).validators.prop[0]
+  return new Schema(obj).properties[0].validators[0]
 }
 
 function compareValidatorOutput(v1, v2) {
@@ -97,22 +97,37 @@ describe('Schema Property Definitions', () => {
 
   })
 
-  describe('Equivalent ways to define a nested property:', () => {
+  describe.only('Equivalent ways to define a nested property:', () => {
 
-    it('Type notation: \t\t{ prop: Object }')
     it('Quick notation: \t{ prop: { } }', () => {
 
       const schema = new Schema({
         prop: {
-          case: {
-
-          }
+          case: String
         }
       })
 
-      console.log(schema)
+      // for (const property of schema.properties)
+      //   console.log(property)
 
-      //console.log(schema.paths)
+      const data = {
+        prop: [{
+          case: 'hello'
+        },{
+          case: 'goodbye'
+        }]
+      }
+
+      console.log(schema.properties)
+
+      schema.sanitize(data)
+        .then(s => {
+          console.log(s)
+          schema.validate(s)
+            .then(e => console.log(e))
+        })
+
+
 
     })
 

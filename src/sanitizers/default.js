@@ -1,6 +1,6 @@
 
 import is from 'is-explicit'
-import { compareId, getIn, checkErrorMsg, parseConfigArgs } from '../helper'
+import { parseConfigArgs } from '../helper'
 
 export function _default(...config) {
 

@@ -10,6 +10,7 @@ export default function type(...config) {
 
   checkErrorMsg(msg)
 
+
   return value => {
 
     //undefined values pass, as they should only fail in the property is required
@@ -23,9 +24,10 @@ export default function type(...config) {
 
     try {
       for (let i = 0; i < values.length; i++) {
-        const casted = castTo(values[i], type)
 
-        if (!is(casted, type) && casted !== null)
+        const casted = castTo(values[i], func)
+
+        if (!is(casted, func) && casted !== null)
           return msg || `Cannot cast ${value} to ${func.name}`
       }
     } catch (err) {
