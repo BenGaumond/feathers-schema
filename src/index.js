@@ -1,6 +1,8 @@
 import Schema from './schema'
-import sanitizeAndValidate from './sanitize-and-validate-hook'
+import * as hooks from './hooks'
+import * as sanitizers from './sanitizers'
+import * as validators from './validators'
 
 export default Schema
 
-export { sanitizeAndValidate }
+export { hooks, sanitizers, validators }

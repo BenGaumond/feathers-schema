@@ -5,7 +5,6 @@ import rest from 'feathers-rest'
 import bodyParser from 'body-parser'
 
 import middleware from './middleware'
-import services from './services'
 
 const PORT = 5000
 const HOST = 'localhost'
@@ -18,7 +17,6 @@ const api = feathers()
 
   .configure(hooks())
   .configure(rest())
-  .configure(services)
   .configure(middleware)
 
 api.start = () => {
@@ -43,7 +41,6 @@ api.end = () => {
       res()
     })
   })
-
 }
 
 export default api

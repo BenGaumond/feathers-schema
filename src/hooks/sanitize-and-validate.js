@@ -1,6 +1,6 @@
 import is from 'is-explicit'
-import Schema from './schema'
-import { hasIn, getIn, setIn } from './helper'
+import Schema from '../schema'
+import { hasIn, getIn, setIn } from '../helper'
 import { BadRequest } from 'feathers-errors'
 
 /******************************************************************************/

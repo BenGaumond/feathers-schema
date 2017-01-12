@@ -1,6 +1,6 @@
 
-import memory from 'feathers-memory'
-import Schema from '../schema'
+import feathersMemory from 'feathers-memory'
+import Schema from '../../lib'
 
 const model = new Schema({
 
@@ -17,18 +17,15 @@ const before = {
   create: [ model.applyHook ]
 }
 
-const after = {
-
-}
-
 export default function() {
 
   const app = this
-  app.use('/todos', memory())
 
-  const todos = app.service('todos')
+  const service = feathersMemory()
 
-  todos.before(before)
-  todos.after(after)
+  app.use('/todos', service)
+
+  app.service('todos')
+     .before(before)
 
 }
