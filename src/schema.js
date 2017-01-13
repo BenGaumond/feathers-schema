@@ -1,23 +1,48 @@
+import { getIn, setIn, isPlainObject } from './helper'
+
+import * as sanitizers  from './sanitizers'
+import * as validators from './validators'
+
+import TYPES from './types'
 import is from 'is-explicit'
 
-import * as validates from './validators'
-import * as sanitizes from './sanitizers'
-
-import { sanitizeAndValidate } from './hooks'
-import { getIn, setIn, isPlainObject } from './helper'
-import deepFreeze from 'deep-freeze'
-
 /******************************************************************************/
-// Options
+// Data
 /******************************************************************************/
 
 const DEFAULT_OPTIONS = {
-  fillPatchData: false,
-  canSkipValidation: () => false
+
+}
+
+const RESERVED_PROPERTY_KEYS = [
+  'type', 'validates', 'validate', 'sanitize', 'sanitizes',
+  ...Object.keys(sanitizers),
+  ...Object.keys(validators)
+]
+
+/******************************************************************************/
+// PropertyBase
+/******************************************************************************/
+
+class PropertyBase {
+
+  addProperty(definition, key) {
+
+    if (!isPlainObject(this.properties))
+      this.properties = {}
+
+    if (key in this.properties)
+      throw new Error('Property already exists.')
+
+    this.properties[key] = new Property(definition, key)
+
+  }
+
+  properties = null
 }
 
 /******************************************************************************/
-// Defintions
+// Property Class
 /******************************************************************************/
 
 function addCustom(defs, key, arr) {
@@ -26,85 +51,165 @@ function addCustom(defs, key, arr) {
 
   const def = defs[key]
 
-  const custom = is(def, Array) ? def : [def]
-  arr.push(...custom)
+  const factories = is(def, Array) ? def : [def]
+  for (const factory of factories) {
+    try {
+      const result = factory.call(this, def)
+
+      //We're expecting custom validators to be a function factory.
+      //However, if they don't return a function, we'll assume that the
+      //factory is actually the custom validator, and not it's result.
+      const func = is(result, Function) ? result : factory
+      arr.push(func)
+    } catch (err) {
+
+      //if the factory call fails for any reason, we'll also assume it's a custom validator
+      arr.push(factory)
+    }
+
+  }
 
 }
 
 function addStock(def, stock, arr) {
   for (const key in stock)
-    if (key in def)
-      arr.push(stock[key](def[key]))
-
+    if (key in def) {
+      const factory = stock[key]
+      const func = factory.call(this, def[key])
+      arr.push(func)
+    }
 }
 
-function createProperty(schema, definition, path) {
 
-  //cast path to arrayOf if it isn't already
-  if (!is(path, Array))
-    path = [path]
+class Property extends PropertyBase {
 
-  //account for arrayOf in quick or plain notation
-  const arrayOf = is(definition, Array)
-  if (arrayOf && definition.length !== 1)
-    throw new Error('Malformed definition. Properties defined as an arrayOf should contain a single element.')
-  if (arrayOf)
-    definition = definition[0]
+  constructor(definition, path) {
+    super()
 
-  //account for quick notation
-  if (is(definition, Function))
-    definition = { type: { func: definition, arrayOf } }
+    //Determin Path
+    this.path = is(path, Array) ? path : [path]
 
-  //convert type plain notation to explicit notation to ensure arrayOf is respected
-  else if (is(definition.type, Function))
-    definition.type = { func: definition.type, arrayOf }
+    //parse Array Propery
+    this.array = is(definition, Array)
+    if (this.array && definition.length === 0)
+      definition = { type: Object }
 
-  //ensure quick, plain, implicit or explicit notation satisfied
-  if (!isPlainObject(definition))
-    throw new Error('Malformed definition. Check feathers-schema documentation to learn how.')
+    else if (this.array && definition.length > 1)
+      throw new Error('Malformed property. Properties defined as Arrays should only contain a single element.')
 
-  //get stock and custom validators
-  const validators = []
+    else if (this.array)
+      definition = definition[0]
 
-  addStock(definition, validates, validators)
-  addCustom(definition, 'validates', validators)
-  addCustom(definition, 'validate', validators)
+    //Determin type
+    if (TYPES.includes(definition))
+      definition = { type: definition }
 
-  //get stock and custom sanitizer
-  const sanitizers = []
+    if (is(definition, Function))
+      throw new Error('Unsupported type.')
 
-  addStock(definition, sanitizes, sanitizers)
-  addCustom(definition, 'sanitizes', sanitizers)
-  addCustom(definition, 'sanitize', sanitizers)
+    if (!isPlainObject(definition))
+      throw new Error('Malformed property.')
 
-  const noFuncs = sanitizers.length + validators.length === 0
-  const createNested = noFuncs && Object.keys(definition).length > 0
-  if (createNested && !arrayOf) {
+    this.type = definition.type || Object
+
+    //get stock and custom validators
+    addStock.call(this, definition, validators, this.validators)
+    addCustom.call(this, definition, 'validates', this.validators)
+    addCustom.call(this, definition, 'validate', this.validators)
+
+    //get stock and custom sanitizer
+    addStock.call(this, definition, sanitizers, this.sanitizers)
+    addCustom.call(this, definition, 'sanitizes', this.sanitizers)
+    addCustom.call(this, definition, 'sanitize', this.sanitizers)
+
+    //Determin sub properties
+    RESERVED_PROPERTY_KEYS.forEach(key => delete definition[key])
+
+    const hasSubProperties = Object.keys(definition).length > 0
+    if (!hasSubProperties)
+      return
+
     for (const key in definition)
-      createProperty(schema, definition[key], [...path, key])
+      this.addProperty(definition[key], key)
 
-    return
-  } else if (createNested && arrayOf) {
-    throw new Error('Nesting arrays of properties not yet implemented.')
+  }
 
-  } else if (noFuncs)
-    throw new Error('Malformed definition: Definition passed with no properties.')
+  addProperty(definition, key) {
+    if (this.type !== Object)
+      throw new Error('Cannot nest properties inside of a property that isn\'t a plain object.')
 
-  schema.properties.push({
-    path,
-    validators,
-    sanitizers
-  })
+    super.addProperty(definition, key)
+
+    this.properties[key].path = [...this.path, key]
+  }
+
+  async sanitize(input, params) {
+
+    input = is(input, Array) ? input : [input]
+
+    const output = []
+
+    for (let i = 0; i < input.length; i++) {
+      let value = input[i]
+
+      //if this property has nested properties, sanitize them first
+      if (this.properties) {
+        const sanitized = {}
+
+        for(const key in this.properties) {
+          const property = this.properties[key]
+          sanitized[key] = await property.sanitize(value[key], params)
+        }
+
+        value = sanitized
+      }
+
+      //then we sanitize the root
+      for (const sanitizer of this.sanitizers)
+        value = await sanitizer(value, params)
+
+      //if this isn't an array, we don't need to continue
+      if (!this.array)
+        return value
+
+      //if it is, we only need to keep values that arn't null or undefined
+      else if (is(value))
+        output.push(value)
+    }
+
+    return output
+
+  }
+
+  async validate(value) {
+
+  }
+
+  type = null
+
+  array = false
+
+  path = null
+
+  sanitizers = []
+
+  validators = []
 
 }
 
 /******************************************************************************/
-// Exports
+// Export Schema
 /******************************************************************************/
 
-export default class Schema {
+export default class Schema extends PropertyBase {
 
-  constructor(properties, options) {
+  constructor(definitions, options) {
+
+    super()
+
+    //Create properties
+    if (!isPlainObject(definitions))
+      throw new Error('A schema must be created with a plain definitions object.')
 
     //Check options
     if (is(options) && !isPlainObject(options))
@@ -112,77 +217,41 @@ export default class Schema {
 
     this.options = { ...DEFAULT_OPTIONS, ...(options || {})}
 
-    if (is(this.options.canSkipValidation, Boolean))
-      this.options.canSkipValidation = () => this.options.canSkipValidation
+    for (const key in definitions)
+      this.addProperty(definitions[key], key)
 
-    if (!is(this.options.canSkipValidation, Function))
-      throw new Error('Schema options.canSkipValidation is expected to be a boolean or a predicate function.')
-
-    //Create properties
-    if (!isPlainObject(properties))
-      throw new Error('A model must be created with a model properties object.')
-
-    for (const path in properties)
-      createProperty(this, properties[path], path)
-
-    deepFreeze(this)
   }
 
   async sanitize(data = {}, params = {}) {
 
-    //use a new object for the returned data, rather than mutating the provided one
-    //this ensures that no data will be passed that isn't defined in the schema
+    if (!isPlainObject(data))
+      throw new Error('Malformed sanitize call.')
+
     const sanitized = {}
 
-    for (const { path, sanitizers } of this.properties) {
+    for (const key in this.properties) {
 
-      //for each path in the schema, get the equivalent value in the hook data,
-      //consolidating empty or undefined values to null
-      let value = getIn(data, path)
-      if (value === undefined || value === '')
-        value = null
+      if (key in data === false)
+        continue
 
-      for (const sanitizer of sanitizers)
-        //run the value through all of the sanitizers in this path
-        value = await sanitizer(value, params)
+      const prop = this.properties[key]
+      const value = await prop.sanitize(data[key], params, sanitized)
 
-      setIn(sanitized, path, value)
+      sanitized[key] = value
     }
 
     return sanitized
+
   }
 
   async validate(data = {}, params = {}) {
 
-    let errors = null
-
-    for (const { path, validators } of this.properties) {
-
-      //for each path in the schema get the equivalent value in the data
-      const value = getIn(data, path)
-
-      for (const validator of validators) {
-
-        //run the value against every validator in this path
-        const result = await validator(value, params)
-
-        //falsy results mean validation passed
-        if (!result)
-          continue
-
-        //if we've gotten here, it means a validator has failed. First we ensure
-        //the errors variable is casted to an object, then we set the validator
-        //results inside of it
-        errors = errors || {}
-        setIn(errors, path, result)
-      }
-    }
-
-    return errors
   }
 
-  properties = []
+  async sanitizeAndValidate(data = {}, params = {}) {
 
-  applyHook = sanitizeAndValidate(this)
+  }
+
+  // async sanitizeAndValidateHook
 
 }

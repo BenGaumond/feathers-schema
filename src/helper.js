@@ -1,7 +1,4 @@
 import is from 'is-explicit'
-import ObjectId from 'bson-objectid'
-
-import { NotImplemented } from 'feathers-errors'
 
 const $HAS = Symbol('path-exists')
 const $GET = Symbol('path-value')
@@ -74,7 +71,13 @@ export function checkErrorMsg(msg) {
     throw new Error('msg configuration property needs to be a String if defined.')
 }
 
-export function parseValidatorConfig(input = [], ...keys) {
+export function checkType(type, shouldbe, name = 'this') {
+
+  if (type !== shouldbe)
+    throw new Error(`${name} is for ${shouldbe.name} properties only.`)
+}
+
+export function parseConfig(input = [], ...keys) {
 
   //Validators can take arguments, an array of arguments, or arguments as a keyed
   //object. If the input is an array of length 1, we'll unwrap it to prevent the possibility
@@ -96,32 +99,4 @@ export function parseValidatorConfig(input = [], ...keys) {
       config[key] = input[key]
 
   return config
-}
-
-export function castTo(value, type) {
-
-  if (is(value, type))
-    return value
-
-  switch (type) {
-
-  case String:
-    return !is(value, Object) ? String(value) : value
-
-  case Number:
-    return parseFloat(value)
-
-  case Boolean:
-    return !!value
-
-  case Date:
-    return is(value, String, Number) ? new Date(value) : value
-
-  case ObjectId:
-    return is(value, String) ? new ObjectId(value) : value
-
-  default:
-    throw new NotImplemented(`Cannot cast to ${type}`)
-
-  }
 }

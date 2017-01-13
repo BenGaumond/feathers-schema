@@ -6,48 +6,59 @@ import clear from 'cli-clear'
 
 /* global describe it */
 
-const NotPlainObjects = ['string', 129, [], new function(){}, Array, true, null, undefined]
-
 clear()
 describe('Schema Class', () => {
 
-  it('Takes a plain object representing definitions as its first argument.', () => {
+  it('is being rebuilt', () => {
 
-    expect(() => new Schema({})).to.not.throw(Error)
+    const schema = new Schema({
+      title:  { type: String, uppercase: true },
+      authors: [{ type: String }],
+      // body:   String,
+      comments: [{ body: { type: String, lowercase: true }, stars: Number }],
+      // date: { type: Date, default: Date.now },
+      // hidden: Boolean,
+      meta: {
 
-    NotPlainObjects.forEach(invalid => expect(() => new Schema(invalid)).to.throw(Error))
+        votes: [{
+          type: Number,
+          sanitizes: [
+            value => value < 0 ? 0 : value > 5 ? 5 : value,
+            value => Math.round(value / 0.25) * 0.25
+          ]
+        }],
 
-  })
+        sanitizes(value) {
 
-  it('Optionally takes a plain object representing options as its second argument', () => {
+          while (value.votes.length > 5)
+            value.votes.shift()
 
-    expect(() => new Schema({}, {})).to.not.throw(Error)
+          return value
+        }
+        
+      }
+    })
 
-    NotPlainObjects
-      .filter(invalid => is(invalid))
-      .forEach(invalid => expect(() => new Schema({}, invalid)).to.throw(Error))
+    schema.sanitize({
+      title: 'DOO WAH DITTY DITTY DUM DIDDY TOO',
 
-  })
+      authors: ['Jerry Rucker', 'Ben Gaumond'],
 
-  it('options.canSkipValidation must be a boolean or function', () => {
+      meta: {
+        votes: [1,3,1,2,4,4,10,2,1,2.5,19,109,1,0.5,0.1,-1]
+      },
 
-    expect(() => new Schema({}, { canSkipValidation: 'sure' })).to.throw(Error);
+      comments: [{
+        body: 'YOU DUMMY',
+        stars: 0
+      },{
+        body: 'VERY GOOD',
+        stars: 5
+      }]
 
-    [() => false, true, false]
-      .forEach( canSkipValidation =>
-        expect(() => new Schema({}, { canSkipValidation })).to.not.throw(Error))
-  })
+    }).then(res => console.log(res))
 
-  it('Is frozen after instantiation.', () => {
 
-    expect(() => {
-
-      const schema = new Schema({})
-
-      schema.paths.push('value')
-      delete schema.validators
-
-    }).to.throw(Error)
   })
 
 })

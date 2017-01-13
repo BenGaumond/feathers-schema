@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "bson-objectid": "^1.1.4",
+    "buffer": "^5.0.2",
     "deep-freeze": "0.0.1",
     "feathers-errors": "^2.5.0",
     "is-explicit": "^1.1.0"
