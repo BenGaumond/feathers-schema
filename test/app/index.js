@@ -45,4 +45,4 @@ api.end = () => {
 
 export default api
 
-export { api }
+export { api, PORT, HOST }

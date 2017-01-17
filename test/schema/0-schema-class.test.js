@@ -2,63 +2,60 @@ import { expect } from 'chai'
 import is from 'is-explicit'
 
 import Schema from '../../lib'
-import clear from 'cli-clear'
 
 /* global describe it */
 
-clear()
+const NotPlainObjects = ['string', 129, [], new function(){}, Array, true, null, undefined]
+const Definition = {
+  description: String
+}
+
+
 describe('Schema Class', () => {
 
-  it('is being rebuilt', () => {
+  it('Takes a plain object representing definitions as its first argument.', () => {
 
-    const schema = new Schema({
-      title:  { type: String, uppercase: true },
-      authors: [{ type: String }],
-      // body:   String,
-      comments: [{ body: { type: String, lowercase: true }, stars: Number }],
-      // date: { type: Date, default: Date.now },
-      // hidden: Boolean,
-      meta: {
+    expect(() => new Schema(Definition)).to.not.throw(Error)
 
-        votes: [{
-          type: Number,
-          sanitizes: [
-            value => value < 0 ? 0 : value > 5 ? 5 : value,
-            value => Math.round(value / 0.25) * 0.25
-          ]
-        }],
+    NotPlainObjects.forEach(invalid => expect(() => new Schema(invalid)).to.throw(Error))
 
-        sanitizes(value) {
+  })
 
-          while (value.votes.length > 5)
-            value.votes.shift()
+  it('Requires at least one property in the definitions object.', () => {
 
-          return value
-        }
-        
-      }
-    })
+    expect(() => new Schema({})).to.throw('Schema was created with no properties.')
 
-    schema.sanitize({
-      title: 'DOO WAH DITTY DITTY DUM DIDDY TOO',
+  })
 
-      authors: ['Jerry Rucker', 'Ben Gaumond'],
+  it('Cannot add properties that already exist.', () => {
 
-      meta: {
-        votes: [1,3,1,2,4,4,10,2,1,2.5,19,109,1,0.5,0.1,-1]
-      },
+    const schema = new Schema(Definition)
 
-      comments: [{
-        body: 'YOU DUMMY',
-        stars: 0
-      },{
-        body: 'VERY GOOD',
-        stars: 5
-      }]
+    expect(() => schema.addProperty(Definition, 'description'))
+      .to
+      .throw('Property already exists.')
 
-    }).then(res => console.log(res))
+  })
 
 
+  it('Optionally takes a plain object representing options as its second argument.', () => {
+
+    expect(() => new Schema(Definition, {})).to.not.throw(Error)
+
+    NotPlainObjects
+      .filter(invalid => is(invalid))
+      .forEach(invalid => expect(() => new Schema({}, invalid)).to.throw(Error))
+
+  })
+
+  it('Option canSkipValidation must be a boolean or function', () => {
+
+    expect(() => new Schema(Definition, { canSkipValidation: 'sure' })).to
+      .throw('Schema options.canSkipValidation is expected to be a boolean or a predicate function.');
+
+    [() => false, true, false]
+      .forEach( canSkipValidation =>
+        expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
 
 })
