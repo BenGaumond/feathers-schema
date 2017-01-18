@@ -66,9 +66,11 @@ export function compareId(idA, idB) {
     : idA === idB
 }
 
-export function checkErrorMsg(msg) {
+export function checkErrorMsg(msg, def) {
   if (is(msg) && !is(msg, String))
     throw new Error('msg configuration property needs to be a String if defined.')
+
+  return is(msg, String) ? msg : def
 }
 
 export function checkType(type, shouldbe, name = 'this') {

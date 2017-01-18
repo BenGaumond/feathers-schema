@@ -1,11 +1,10 @@
+
 import Schema, { types } from '../../lib'
 import { assert  } from 'chai'
 import is from 'is-explicit'
 import ObjectId from 'bson-objectid'
-/* global describe it */
 
-// const shouldThrow = obj => expect(() => new Schema(obj)).to.throw(Error)
-// const shouldNotThrow = obj => expect(() => new Schema(obj)).to.not.throw(Error)
+/* global describe it */
 
 function createValidator(obj, key = 'prop') {
   const schema = new Schema(obj)
@@ -13,29 +12,48 @@ function createValidator(obj, key = 'prop') {
 
   const validator = property.validate.bind(property)
   validator.type = property.type
+  validator.array = property.array
 
   return validator
 }
 
-const stringify = val => is(val, Symbol) ? 'Symbol' :
-  is(val, Buffer) ? 'Buffer' :
+function createSanitizer(obj, key = 'prop') {
+  const schema = new Schema(obj)
+  const property = schema.properties[key]
+
+  const sanitizer = property.sanitize.bind(property)
+  sanitizer.type = property.type
+  sanitizer.array = property.array
+
+  return sanitizer
+}
+
+const stringify = val => is(val, Symbol) ? '[symbol Symbol]' :
+  is(val, Buffer) ? '[object Buffer]' :
   val === '' ? 'empty string' :
-  is(val, Array) ? 'Array' :
-  is(val, String) ? '"'+val+'"' :
+  is(val, Array) ? '[object Array]' :
+  is(val, String) ? `"${val}"` :
+  is(val, ObjectId) ? '[object ObjectId]' :
   val
 
-const result = val => val ? 'FAIL' : 'PASS'
+const validatorResult = val => val ? 'FAIL' : 'PASS'
 
 async function testValidator(validator, value, expected) {
 
   const passOrFail = await validator(value)
-
-  assert.equal(result(passOrFail), result(expected))
+  assert.equal(validatorResult(passOrFail), validatorResult(expected))
 }
+
+async function testSanitizer(sanitizer, value, expected) {
+
+  const sanitized = await sanitizer(value)
+  assert.deepEqual(sanitized, expected)
+}
+
 
 async function equivalentValidatorOutput(v1, v2) {
 
-  return Promise.all(['string', null, undefined, 10, {}, [{}], [], ['string'], [100], true, [false], Symbol(), [Symbol()], Infinity, NaN]
+  return Promise.all(['string', null, undefined, 10, {}, [{}], [], ['string'], [100], true, [false], Symbol(), [Symbol()], Infinity,  NaN]
     .map(async value => {
       const r1 = await v1(value)
       const r2 = await v2(value)
@@ -47,9 +65,9 @@ async function equivalentValidatorOutput(v1, v2) {
 
 }
 
-describe('Schema Property Definitions', () => {
+describe('Property Definitions', () => {
 
-  describe('Property of a given Type:', () => {
+  describe('Property of a specific type:', () => {
 
     const original = createValidator({ prop: Number })
 
@@ -66,7 +84,7 @@ describe('Schema Property Definitions', () => {
 
   })
 
-  describe('Property of an array of a given Type:', () => {
+  describe('Property of an array of a specific type:', () => {
 
     const original = createValidator({ prop: [Number] })
 
@@ -120,41 +138,49 @@ describe('Schema Property Definitions', () => {
 
   })
 
-  const TYPE_TEST_VALUES = ['foobar', '', 0, 1, Infinity, -Infinity, NaN,
-    true, false, new Date(), new Buffer([0x00]), {}, [], new ObjectId(), function(){},
+  const TYPE_TEST_VALUES = ['foobar', '1337', '587eaa7cb4a64418e292c771', 'Tue Jan 17 2017 15:36:28 GMT-0800 (PST)', '', 0, Infinity, NaN, -Infinity,
+    true, new Date(), new Buffer([0x00]), Buffer.from('foobar'),{}, [], new ObjectId(), function(){},
     Symbol(), null, undefined]
 
   const TYPES = types.ALL.filter(type => type != types.ANY)
   TYPES.forEach(type => {
 
-    describe('Type Checks ' + type.name, () => {
+    const validator = createValidator({ prop: type })
+
+    describe('Type checks ' + type.name, () => {
 
       TYPE_TEST_VALUES.map(value => {
 
         const expected = !((value == null || is(value, type)) && !is(value, Function) && !is(value, Symbol) && !is(value, Array))
 
-        it(stringify(value) + ' should ' + result(expected), () => {
-
-          const validator = createValidator({ prop: type })
-          return testValidator(validator, value, expected)
-
-        })
+        it(stringify(value) + ' should ' + validatorResult(expected), () => testValidator(validator, value, expected))
       })
-
     })
-
   })
 
   describe('Type checks ANY', () => {
+
+    const validator = createValidator({ prop: types.ANY })
 
     TYPE_TEST_VALUES.map(value => {
 
       const expected = !(value == null || !Number.isNaN(value) && !is(value, Function) && !is(value, Symbol))
 
-      it(stringify(value) + ' should ' + result(expected), () => {
+      it(stringify(value) + ' should ' + validatorResult(expected), () => testValidator(validator, value, expected))
+    })
+  })
 
-        const validator = createValidator({ prop: types.ANY })
-        return testValidator(validator, value, expected)
+  TYPES.forEach(type => {
+
+    describe('Type casts ' + type.name, () => {
+
+      const sanitizer = createSanitizer({ prop: type })
+
+      TYPE_TEST_VALUES.map(value => {
+
+        const expected = types.cast(value, type)
+
+        it(stringify(value) + ' should cast to ' + stringify(expected), () => testSanitizer(sanitizer, value, expected))
       })
     })
   })

@@ -8,6 +8,17 @@ import { ALL, ANY, cast } from './types'
 import is from 'is-explicit'
 
 /******************************************************************************/
+// Helpers
+/******************************************************************************/
+
+const fixKey = key => key.replace(/_|@/g, '')
+
+//Quick helper function to
+const fixKeys = obj => Object
+  .keys(obj)
+  .map(fixKey)
+
+/******************************************************************************/
 // Data
 /******************************************************************************/
 
@@ -18,8 +29,8 @@ const DEFAULT_OPTIONS = {
 
 const RESERVED_PROPERTY_KEYS = [
   'type', 'validates', 'validate', 'sanitize', 'sanitizes',
-  ...Object.keys(sanitizers),
-  ...Object.keys(validators)
+  ...fixKeys(sanitizers),
+  ...fixKeys(validators)
 ]
 
 /******************************************************************************/
@@ -75,12 +86,17 @@ function addCustom(defs, key, arr) {
 }
 
 function addStock(def, stock, arr) {
-  for (const key in stock)
+  for (const stockkey in stock) {
+
+    //remove underscores from stock keys, such as in _default
+    const key = fixKey(stockkey)
+
     if (key in def) {
-      const factory = stock[key]
+      const factory = stock[stockkey]
       const func = factory.call(this, def[key])
       arr.push(func)
     }
+  }
 }
 
 class Property extends PropertyBase {
@@ -138,7 +154,7 @@ class Property extends PropertyBase {
       return
 
     for (const key in definition)
-      this.addProperty(definition[key], key)
+      this.addProperty(definition[key], fixKey(key))
 
   }
 
@@ -153,10 +169,12 @@ class Property extends PropertyBase {
 
   async sanitize(input, params) {
 
+    //output needs to be initialized like in case input will not be cast to an
+    //array with any items in it
+    let output = this.array ? [] : cast(input, this.type)
+
     //cast input to an array, if it isn't already.
     input = is(input, Array) ? input : [input]
-
-    const output = []
 
     for (let value of input) {
 
@@ -187,12 +205,16 @@ class Property extends PropertyBase {
 
       //if this property isn't an array, we don't need to continue. If the input
       //value was an array, this property will only take the first value.
-      if (!this.array)
-        return value
+      if (!this.array) {
+        output = value
+        break
+      }
 
-      //if it is an array we only need to keep values that arn't null or undefined.
-      else if (is(value))
+      //if we've gotten here, output will definetly be an array. We also only
+      //need to push values if they're not null
+      if (is(value))
         output.push(value)
+
     }
 
     return output
@@ -335,7 +357,7 @@ export default class Schema extends PropertyBase {
       throw new Error('A schema must be created with a plain definitions object.')
 
     for (const key in definitions)
-      this.addProperty(definitions[key], key)
+      this.addProperty(definitions[key], fixKey(key))
 
     if (this.properties === null)
       throw new Error('Schema was created with no properties.')
