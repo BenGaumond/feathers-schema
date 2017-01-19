@@ -1,46 +1,12 @@
-import Schema, { types } from '../../lib'
-import { assert, expect  } from 'chai'
-import is from 'is-explicit'
+import { assert  } from 'chai'
+
+import { createSchema, schemaShouldThrow, schemaShouldNotThrow } from './helper'
 
 /* global describe it */
-
-function createSchema(prop) {
-  return new Schema({ prop })
-}
-
-function schemaShouldThrow(prop, error = Error) {
-  expect(() => createSchema(prop))
-    .to
-    .throw(error)
-}
-
-function schemaShouldNotThrow(prop, error = Error) {
-  expect(() => createSchema(prop))
-    .to
-    .not
-    .throw(error)
-}
-
-function schemaEquivalent(a, b, ...data) {
-  const sa = createSchema(a)
-  const sb = createSchema(b)
-
-  return Promise.all(data.map(async prop => {
-
-    const ra = await sa.sanitize({prop})
-    const rb = await sb.sanitize({prop})
-
-    return assert.deepEqual(ra, rb)
-
-  }))
-
-}
-
 
 async function testSchema (schema, value, expected) {
 
   const result = await schema.sanitize({ prop: value })
-
   return assert.deepEqual(result, { prop: expected })
 
 }
@@ -136,6 +102,29 @@ describe('Stock String Sanitizers', () => {
     it('can only be applied to string properties', async () => {
       await schemaShouldThrow({type: Number, lowercase: true})
       return schemaShouldNotThrow({type: String, lowercase: true})
+    })
+
+  })
+
+  describe('trim', () => {
+
+    it('trim string values of whitespace', () => {
+
+      const schema = createSchema({
+        type: String,
+        trim: true
+      })
+
+      return Promise
+        .all(['  case ', '  foobar \n', ' !@#$%^ ', ' 102031']
+          .map(value => testSchema(schema, value, value.trim())
+        ))
+
+    })
+
+    it('can only be applied to string properties', async () => {
+      await schemaShouldThrow({type: Number, trim: true})
+      return schemaShouldNotThrow({type: String, trim: true})
     })
 
   })

@@ -126,9 +126,6 @@ class Property extends PropertyBase {
     else if (isPlainObject(definition) && 'type' in definition === false)
       definition = { type: Object, ...definition }
 
-    if (is(definition, Function))
-      throw new Error('Unsupported type.')
-
     if (!isPlainObject(definition))
       throw new Error('Malformed property: Could not convert to Type notation.')
 
@@ -169,12 +166,10 @@ class Property extends PropertyBase {
 
   async sanitize(input, params) {
 
-    //output needs to be initialized like in case input will not be cast to an
-    //array with any items in it
-    let output = this.array ? [] : cast(input, this.type)
-
     //cast input to an array, if it isn't already.
     input = is(input, Array) ? input : [input]
+
+    let output = this.array ? [] : null
 
     for (let value of input) {
 
@@ -218,7 +213,6 @@ class Property extends PropertyBase {
     }
 
     return output
-
   }
 
   async validate(values, params) {
@@ -241,6 +235,8 @@ class Property extends PropertyBase {
     for (let i = 0; i < values.length; i++) {
 
       const value = values[i]
+      const isNull = !is(value)
+
       let result = do {
 
         //Symbols, typed or not, cannot be stored in a Database
@@ -255,9 +251,13 @@ class Property extends PropertyBase {
         else if (Number.isNaN(value))
           'Cannot store NaN as a value.'
 
+        //values of type Object should only apply for plain objects
+        else if (this.type === Object && !isNull && !isPlainObject(value))
+          'Expected plain Object.'
+
         //A typed value can equal null, meaning that it is optional. If a value
         //isn't null, and isn't of the type specified, it shouldn't pass validation
-        else if (!any && is(value) && !is(value, this.type))
+        else if (!any && !isNull && !is(value, this.type))
           `Expected ${this.array ? 'array of ' : ''}${this.type.name}.`
 
         //All remaining values either fit their type or are elligable for 'ANY'

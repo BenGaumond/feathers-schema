@@ -8,7 +8,6 @@ import * as validators from './validators'
 
 import * as sanitizers from './sanitizers'
 
-
 export default Schema
 
 export { Schema, types, hooks, validators, sanitizers }

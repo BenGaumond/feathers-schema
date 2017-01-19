@@ -16,3 +16,11 @@ export function uppercase() {
   return value => is(value, String) ? value.toUpperCase() : value
 
 }
+
+export function trim() {
+
+  checkType(this.type, String, 'trim')
+
+  return value => is(value, String) ? value.trim() : value
+
+}

@@ -1,5 +1,7 @@
 import is from 'is-explicit'
 
+import { ALL, ANY } from './types'
+
 const $HAS = Symbol('path-exists')
 const $GET = Symbol('path-value')
 
@@ -66,17 +68,34 @@ export function compareId(idA, idB) {
     : idA === idB
 }
 
-export function checkErrorMsg(msg, def) {
-  if (is(msg) && !is(msg, String))
-    throw new Error('msg configuration property needs to be a String if defined.')
+export function createErrorMessager(msg, _default) {
 
-  return is(msg, String) ? msg : def
+  if (is(msg) && !is(msg, String) && !is(msg, Function))
+    throw new Error('msg needs to be a String or Function.')
+
+  if (!is(_default, String) && !is(_default, Function))
+    _default = 'Validation Failed.'
+
+  return is(msg, Function) ? msg
+  : is(msg, String)        ? () => msg
+  : is(_default, Function) ? _default
+  :                          () => _default
 }
 
-export function checkType(type, shouldbe, name = 'this') {
+export function checkType(type, shouldBe, name = 'this') {
 
-  if (type !== shouldbe)
-    throw new Error(`${name} is for ${shouldbe.name} properties only.`)
+  shouldBe = is(shouldBe, Array) ? shouldBe : [shouldBe]
+
+  for (const otherType of shouldBe) {
+    if (otherType === ANY)
+      throw new Error('Don\'t use this function to check ANY type.')
+
+    if (!ALL.includes(otherType))
+      throw new Error('Unsupported Type: ' + otherType)
+  }
+
+  if (!shouldBe.includes(type))
+    throw new Error(`${name} is for ${shouldBe.map( t => t.name )} properties only.`)
 }
 
 export function parseConfig(input = [], ...keys) {

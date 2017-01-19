@@ -137,9 +137,8 @@ export function cast(value, type) {
   if (!ALL.includes(type))
     throw new Error('invalid type argument.')
 
-  //empty strings and undefined are cast to null, and null values are considered
-  //casted to type. By default, null values pass type checks.
-  if (!is(value) || value === '')
+  //empty values, or values that shouldn't be cast at all, are returned as anull
+  if (!is(value) || value === '' || is(value, Symbol, Function) || Number.isNaN(value))
     return null
 
   //If the value is already of the type specified, the value is considered casted.

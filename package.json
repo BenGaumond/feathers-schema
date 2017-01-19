@@ -4,8 +4,8 @@
   "description": "Model structure/validation for feathers.js",
   "main": "lib",
   "scripts": {
-    "test": "mocha --bail --require babel-register --require babel-polyfill 'test/**/*test.js'",
-    "test:watch": "mocha --bail --require babel-register --watch --require babel-polyfill 'test/**/*test.js'",
+    "test": "mocha --require babel-register --require babel-polyfill 'test/**/*test.js'",
+    "test:watch": "mocha --require babel-register --watch --require babel-polyfill 'test/**/*test.js'",
     "create-readme": "./node_modules/.bin/jsdoc2md \"src/*.{js,md}\" > api.md; cat api-intro.md api.md > README.md",
     "build": "rm -rf lib; mkdir lib; node_modules/.bin/babel src --out-dir lib",
     "build:watch": "npm run build -- --watch"
@@ -18,7 +18,8 @@
     "feathers",
     "schema",
     "model",
-    "validation"
+    "validation",
+    "validate"
   ],
   "author": "Ben Gaumond",
   "license": "ISC",

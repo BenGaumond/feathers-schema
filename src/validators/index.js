@@ -1,3 +1,3 @@
-import { required } from './general'
+import { required, _enum } from './general'
 
-export { required }
+export { required, _enum }
