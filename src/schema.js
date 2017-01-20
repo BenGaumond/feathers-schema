@@ -1,4 +1,4 @@
-import { isPlainObject } from './helper'
+import { isPlainObject, array } from './helper'
 import { populateWithSchema, sanitizeWithSchema, validateWithSchema } from './hooks'
 
 import * as sanitizers  from './sanitizers'
@@ -65,7 +65,7 @@ function addCustom(defs, key, arr) {
 
   const def = defs[key]
 
-  const factories = is(def, Array) ? def : [def]
+  const factories = array(def)
   for (const factory of factories) {
     try {
       const result = factory.call(this, def)
@@ -80,9 +80,7 @@ function addCustom(defs, key, arr) {
       //if the factory call fails for any reason, we'll also assume it's a custom validator
       arr.push(factory)
     }
-
   }
-
 }
 
 function addStock(def, stock, arr) {
@@ -105,7 +103,7 @@ class Property extends PropertyBase {
     super()
 
     //Determin Path
-    this.path = is(path, Array) ? path : [path]
+    this.path = array(path)
 
     //Determine if array
     this.array = is(definition, Array)
@@ -166,8 +164,7 @@ class Property extends PropertyBase {
 
   async sanitize(input, params) {
 
-    //cast input to an array, if it isn't already.
-    input = is(input, Array) ? input : [input]
+    input = array(input)
 
     let output = this.array ? [] : null
 

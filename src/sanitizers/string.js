@@ -1,9 +1,9 @@
-import { parseConfig, checkType } from '../helper'
+import { assert } from '../types'
 import is from 'is-explicit'
 
 export function lowercase() {
 
-  checkType(this.type, String, 'lowercase')
+  assert(this.type, String)
 
   return value => is(value, String) ? value.toLowerCase() : value
 
@@ -11,7 +11,7 @@ export function lowercase() {
 
 export function uppercase() {
 
-  checkType(this.type, String, 'uppercase')
+  assert(this.type, String)
 
   return value => is(value, String) ? value.toUpperCase() : value
 
@@ -19,7 +19,7 @@ export function uppercase() {
 
 export function trim() {
 
-  checkType(this.type, String, 'trim')
+  assert(this.type, String)
 
   return value => is(value, String) ? value.trim() : value
 

@@ -47,6 +47,11 @@ describe('Stock General Sanitizers', () => {
         default: { value: def }
       })
 
+      await schemaShouldNotThrow({
+        type: Number,
+        default: def
+      })
+
       const schema = createSchema({
         type: Number,
         default: () => def

@@ -102,7 +102,7 @@ export default ALL
 
 export { ALL, ANY }
 
-export function setCustomCast(type, method) {
+export function setCustom(type, method) {
 
   if (!is(type, Function))
     throw new Error('type argument must be a constructor.')
@@ -130,6 +130,20 @@ export function reset() {
       methods.set(type, method)
   }
 
+}
+
+export function name(type) {
+  return type === ANY ? 'ANY' : type.name
+}
+
+export function assert(type, ...validTypes) {
+
+  for (const validType of validTypes)
+    if (!ALL.includes(validType))
+      throw new Error(`Unsupported Type: ${name(validType)}`)
+
+  if (!validTypes.includes(type))
+    throw new Error(`Expected type: ${validTypes.map(validType => name(validType))}`)
 }
 
 export function cast(value, type) {

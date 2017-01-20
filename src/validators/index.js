@@ -1,3 +1,4 @@
-import { required, _enum } from './general'
+import { _enum, required } from './general'
+import { format, email, nospaces, alphanumeric } from './string'
 
-export { required, _enum }
+export { _enum, required, format, email, nospaces, alphanumeric }

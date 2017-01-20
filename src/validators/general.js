@@ -1,43 +1,41 @@
-import { checkType, parseConfig, createErrorMessager } from '../helper'
+import { parseConfig } from '../helper'
+import { assert } from '../types'
 import is from 'is-explicit'
 
 const PASS = false
 
 export function required(...config) {
 
-  let { condition, msg } = parseConfig(config, 'condition', 'msg')
+  const { condition, msg } = parseConfig(config, {
+    condition: { type: Function, default: () => true },
+    msg: { type: String, default: 'Required.'}
+  })
 
-  //required allows a 'condition' function.
-  //if it returns true, the value is required.
-  if (!is(condition, Function))
-    condition = () => true
+  return async (value, params) => await condition(value, params)
 
-  msg = createErrorMessager(msg, 'Required.')
-
-  return (value, params) => condition(value, params)
-
-    ? is(value) ? PASS : msg(value, params)
+    ? is(value) ? PASS : msg
 
     : PASS
 }
 
 export function _enum(...config) {
 
-  let { values, msg } = parseConfig(config, 'values', 'msg') //eslint-disable-line prefer-const
+  assert(this.type, String, Number)
 
-  checkType(this.type, [String, Number], 'enum')
+  const { values, msg } = parseConfig(config, {
+    values: { type: Array, required: true },
+    msg: String
+  })
 
-  if (!is(values, Array) || !values.every(v => is(v, this.type)))
+  if (!values.every(v => is(v, this.type)))
     throw new Error(`enum requires an array of ${this.type.name} values.`)
 
-  msg = createErrorMessager(msg, `Must be one of "${values.join(',')}"`)
-
   //null values pass
-  return (value, params) => !is(value) ? PASS
+  return value => !is(value) ? PASS
 
     //if the value exists in the values array, it passes
     : values.includes(value) ? PASS
 
     //otherwise it fails
-    : msg(value, params)
+    : msg || `Must be one of "${values.join(',')}"`
 }
