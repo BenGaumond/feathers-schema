@@ -1,5 +1,5 @@
-import { trim, uppercase, lowercase } from './string'
-
 import { _default } from './general'
 
-export { _default, trim, uppercase, lowercase }
+import { uppercase, lowercase, trim } from './string'
+
+export { _default, uppercase, lowercase, trim }

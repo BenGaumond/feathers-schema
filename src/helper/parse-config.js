@@ -89,7 +89,6 @@ export default function parseConfig(input, detail) {
   if (!isObject)
     input = array(input)
 
-
   if (!isObject && detail[EXPECTING_ARRAY] && !containsArray(input))
     input = [input]
 
@@ -116,10 +115,10 @@ export default function parseConfig(input, detail) {
 
     }
 
-    if (value === null && _default != null)
+    if (!is(value) && is(_default))
       value = _default
 
-    if (value != null)
+    if (is(value))
       config[key] = value
 
     else if (required)

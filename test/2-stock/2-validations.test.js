@@ -29,23 +29,22 @@ describe('Stock General Validators', () => {
   describe('required validator', () => {
 
     it('fails if input is null or undefined', async () => {
-
       const schema = createSchema({ type: String, required: true })
       const values = ['whatever', null, 'string', undefined]
 
       for (const value of values)
         await runValidator(schema, value, !is(value))
-
     })
 
     it('optionally takes a predicate function that returns weather value is required.', async () => {
       const schema = createSchema({ type: String, required: () => false })
+
       await runValidator(schema, null, PASS)
     })
 
     it('optionally takes a error message string', async () => {
       const msg = 'Must have.'
-      const schema = createSchema({ type: String, required: msg})
+      const schema = createSchema({ type: String, required: msg })
 
       await runValidator(schema, null, msg)
     })
@@ -101,6 +100,64 @@ describe('Stock General Validators', () => {
 })
 
 describe('Stock String Validators', () => {
+
+  describe('length validator', () => {
+
+    it('fails if string length doesn\'t comply with specified parameters.', async () => {
+
+      const tests = [[10, '<='], ['>=', 6], [4,8], [0, '>'], ['>=', 10]]
+      const expects = [n => n <= 10, n => n >= 6, n => n >= 4 && n <= 8, n => n > 0, n => n >= 10 ]
+      const values = Array.from({length: 11}, (u,i) => '*'.repeat(i))
+
+      for (let i = 0; i < tests.length; i++) {
+
+        const test = tests[i]
+        const schema = createSchema({ type: String, length: test })
+
+        const expect = expects[i]
+
+        for (const value of values)
+          await runValidator(schema, value, !expect(value.length))
+
+      }
+    })
+
+    it('requires a min and max value, or a value and a comparer', async () => {
+
+      schemaShouldThrow({ type: String, length: [0,'<=>'] }, 'For comparing a range, a min and max value is required.')
+      schemaShouldThrow({ type: String, length: {max: 100} }, 'For comparing a range, a min and max value is required.')
+      schemaShouldThrow({ type: String, length: {value: 100} }, 'Cannot just provide a value to compare a range.')
+      schemaShouldThrow({ type: String, length: [0] }, 'For comparing a range, a min and max value is required.')
+      schemaShouldNotThrow({ type: String, length: {min: 10, max: 100} })
+      schemaShouldNotThrow({ type: String, length: {value: 10, compare: '<='} })
+      schemaShouldNotThrow({ type: String, length: ['<', 10] })
+      schemaShouldNotThrow({ type: String, length: ['>', 50] })
+      schemaShouldNotThrow({ type: String, length: [10,100] })
+
+    })
+
+    it('requires a String property', () => {
+      for (const type of ALL)
+        if (type === String)
+          schemaShouldNotThrow({ type, length: [0,10] })
+        else
+          schemaShouldThrow({ type, length: [0,10] }, 'Expected type: String')
+    })
+
+
+    it('optionally takes a error message string', async () => {
+      const msg = '8 or less characters, please.'
+      const schema = createSchema({ type: String, length: { value: 8, compare: '<=', msg } })
+
+      await runValidator(schema, 'tattoos-are-rad', msg)
+    })
+
+    it('passes if input is null or undefined', async () => {
+      const schema = createSchema({ type: String, length: { min: 2, max: 4, compare: '<=>' } })
+      await runValidator(schema, null, false)
+    })
+
+  })
 
   const phoneRegex = /^\d\d\d-\d\d\d\d$/
   describe('format validator', () => {
@@ -192,16 +249,16 @@ describe('Stock String Validators', () => {
 
     })
 
-    it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: String, alphanumeric: true })
-      await runValidator(schema, null, false)
-    })
-
     it('optionally takes a error message string', async () => {
       const msg = 'If you put anything but letters or numbers I will straight up cut you.'
       const schema = createSchema({ type: String, alphanumeric: msg })
 
       await runValidator(schema, 'I <3 you!!!', msg)
+    })
+
+    it('passes if input is null or undefined', async () => {
+      const schema = createSchema({ type: String, alphanumeric: true })
+      await runValidator(schema, null, false)
     })
 
     it('requires a String property', async () => {
@@ -215,7 +272,7 @@ describe('Stock String Validators', () => {
 
   describe('nospaces validator', () => {
 
-    it('fails if value isn\'t nospaces', async () => {
+    it('fails if value has spaces', async () => {
 
       const schema = createSchema({ type: String, nospaces: true })
       const values = ['snake_case', 'one-two-three', '"  "', 'lol what', '01 10 01 10']
@@ -248,6 +305,143 @@ describe('Stock String Validators', () => {
         else
           await schemaShouldThrow({ type, nospaces: true }, 'Expected type: String')
     })
+  })
+
+})
+
+describe('Stock Number Validators', () => {
+
+  describe('range validator', () => {
+
+    it('fails if value doesn\'t comply with specified parameters.', async () => {
+
+      const tests = [[10, '<='], ['>=', 6], [4,8], [0, '>'], ['>=', 10]]
+      const expects = [n => n <= 10, n => n >= 6, n => n >= 4 && n <= 8, n => n > 0, n => n >= 10 ]
+      const values = Array.from({length: 11}, (u,i) => i)
+
+      for (let i = 0; i < tests.length; i++) {
+
+        const test = tests[i]
+        const schema = createSchema({ type: Number, range: test })
+
+        const expect = expects[i]
+
+        for (const value of values)
+          await runValidator(schema, value, !expect(value))
+
+      }
+    })
+
+    it('requires a min and max value, or a value and a comparer', () => {
+
+      schemaShouldThrow({ type: Number, range: [0,'<=>'] }, 'For comparing a range, a min and max value is required.')
+      schemaShouldThrow({ type: Number, range: {max: 100} }, 'For comparing a range, a min and max value is required.')
+      schemaShouldThrow({ type: Number, range: {value: 100} }, 'Cannot just provide a value to compare a range.')
+      schemaShouldThrow({ type: Number, range: [0] }, 'For comparing a range, a min and max value is required.')
+      schemaShouldNotThrow({ type: Number, range: {min: 10, max: 100} })
+      schemaShouldNotThrow({ type: Number, range: {value: 10, compare: '<='} })
+      schemaShouldNotThrow({ type: Number, range: ['<', 10] })
+      schemaShouldNotThrow({ type: Number, range: ['>', 50] })
+      schemaShouldNotThrow({ type: Number, range: [10,100] })
+
+    })
+
+    it('requires a Number property', () => {
+      for (const type of ALL)
+        if (type === Number)
+          schemaShouldNotThrow({ type, range: [0,10] })
+        else
+          schemaShouldThrow({ type, range: [0,10] }, 'Expected type: Number')
+    })
+
+
+    it('optionally takes a error message string', async () => {
+      const msg = '8 or less.'
+      const schema = createSchema({ type: Number, range: { value: 8, compare: '<=', msg } })
+
+      await runValidator(schema, 9, msg)
+    })
+
+    it('passes if input is null or undefined', async () => {
+      const schema = createSchema({ type: Number, range: { min: 2, max: 4, compare: '<=>' } })
+
+      await runValidator(schema, null, false)
+    })
+
+  })
+
+  describe('even validator', () => {
+
+    it('throws an error if value is even', async () => {
+
+      const schema = createSchema({ type: Number, even: true})
+      const values = [1,4,7,8,10,11,129,12371,123,101209]
+
+      for (const value of values) {
+        const expected = !(value % 2 === 0)
+        await runValidator(schema, value, expected)
+      }
+
+    })
+
+    it('requires a Number property', () => {
+      for (const type of ALL)
+        if (type === Number)
+          schemaShouldNotThrow({ type, even: true })
+        else
+          schemaShouldThrow({ type, even: true }, 'Expected type: Number')
+    })
+
+    it('passes if input is null or undefined', async () => {
+      const schema = createSchema({ type: Number, even: true })
+
+      await runValidator(schema, null, false)
+    })
+
+    it('optionally takes a error message string', async () => {
+      const msg = 'Make it an even number, you unfair fuck.'
+      const schema = createSchema({ type: Number, even: msg })
+
+      await runValidator(schema, 9, msg)
+    })
+
+  })
+
+  describe('odd validator', () => {
+
+    it('throws an error if value is odd', async () => {
+
+      const schema = createSchema({ type: Number, odd: true})
+      const values = [1,4,7,8,10,11,129,12371,123,101209]
+
+      for (const value of values) {
+        const expected = !(value % 2 === 1)
+        await runValidator(schema, value, expected)
+      }
+
+    })
+
+    it('requires a Number property', () => {
+      for (const type of ALL)
+        if (type === Number)
+          schemaShouldNotThrow({ type, odd: true })
+        else
+          schemaShouldThrow({ type, odd: true }, 'Expected type: Number')
+    })
+
+    it('passes if input is null or undefined', async () => {
+      const schema = createSchema({ type: Number, odd: true })
+
+      await runValidator(schema, null, false)
+    })
+
+    it('optionally takes a error message string', async () => {
+      const msg = 'Make it an odd number, you soccer mom.'
+      const schema = createSchema({ type: Number, odd: msg })
+
+      await runValidator(schema, 10, msg)
+    })
+
   })
 
 })

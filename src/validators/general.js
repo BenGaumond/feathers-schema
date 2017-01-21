@@ -16,6 +16,7 @@ export function required(...config) {
     ? is(value) ? PASS : msg
 
     : PASS
+
 }
 
 export function _enum(...config) {

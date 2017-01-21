@@ -9,40 +9,49 @@ import middleware from './middleware'
 const PORT = 5000
 const HOST = 'localhost'
 
-let server = null
+export default class App {
 
-const api = feathers()
-  .use(bodyParser.json())
-  .use(bodyParser.urlencoded({ extended: true }))
+  constructor() {
+    this.feathers = feathers()
+      .use(bodyParser.json())
+      .use(bodyParser.urlencoded({ extended: true }))
 
-  .configure(hooks())
-  .configure(rest())
-  .configure(middleware)
+      .configure(hooks())
+      .configure(rest())
+      .configure(middleware)
+  }
 
-api.start = () => {
-  if (server)
-    return
+  start = () => {
+    if (this.server)
+      return
 
-  return new Promise(res => {
-    server = api.listen(PORT, HOST)
-    server.once('listening', res)
-  })
-
-}
-
-api.end = () => {
-  if (!server)
-    return
-
-  return new Promise(res => {
-    server.close()
-    server.once('close', () => {
-      server = null
-      res()
+    return new Promise(res => {
+      this.server = this.feathers.listen(PORT, HOST)
+      this.server.once('listening', res)
     })
-  })
+
+  }
+
+  configure = (...args) => this.feathers.configure(...args)
+
+  service = (...args) => this.feathers.service(...args)
+
+  use = (...args) => this.feathers.use(...args)
+
+  end = () => {
+    if (!this.server)
+      return
+
+    return new Promise(res => {
+      this.server.close()
+      this.server.once('close', () => {
+        this.server = null
+        res()
+      })
+    })
+  }
+
+  server = null
 }
 
-export default api
-
-export { api, PORT, HOST }
+export { PORT, HOST }

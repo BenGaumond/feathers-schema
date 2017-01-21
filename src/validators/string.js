@@ -1,34 +1,24 @@
-import { parseConfig } from '../helper'
+import { parseConfig, rangeValidatorFactory } from '../helper'
 import { assert } from '../types'
 import is from 'is-explicit'
 
 const PASS = false
 
-// TODO gotta figure out how to make this not a pain in the ass
-// export function length(...config) {
-//
-//   assert(this.type, String)
-//
-//   let { min, max, compare, msg} = parseConfig(config, {
-//     min: { type: Number, default: -Infinity },
-//     max: { type: Number, default: Infinity },
-//     compare: { type: String, default: '<=>' },
-//     msg: String
-//   })
-//
-//   if (isFinite(min) && isFinite(max) && compare !== '<=>')
-//     throw new Error('compare ')
-//
-//   ;[min, max] = min <= max ? [min, max] : [max, min]
-//
-//   msg = msg ? msg
-//     : compare === '<=' ? `Must be equal to or less than ${max} characters.`
-//     : compare === '<' ? `Must be less than ${max} characters.`
-//     : compare === '>' ? `Must be more than ${min} characters.`
-//     : compare === '>=' ? `Must be equal to or more than ${min} characters.`
-//     : /*compare === '<=>'*/ `Must be between ${min} and ${max} characters.`
-//
-// }
+const DEFAULT_LENGTH_ERROR_MSGS = {
+  '<=': number => `Must have ${number} or less characters.`,
+  '<': number => `Must have less than ${number} characters.`,
+  '>': number => `Must have more than ${number} characters.`,
+  '>=': number => `Must have ${number} or more characters.`,
+  '<=>': (min, max) => `Must have between ${min} and ${max} characters.`
+}
+
+export function length(...config) {
+
+  assert(this.type, String)
+
+  return rangeValidatorFactory(config, str => str.length, DEFAULT_LENGTH_ERROR_MSGS)
+
+}
 
 export function format(...config) {
 

@@ -289,7 +289,7 @@ class Property extends PropertyBase {
 
           //if a validator failed, we don't need to continue
           if (result)
-            continue
+            break
         }
       }
 
@@ -404,6 +404,7 @@ export default class Schema extends PropertyBase {
     for (const key in this.properties) {
 
       const property = this.properties[key]
+
       const result = await property.validate(data[key], params)
 
       //falsy results mean validation passed
