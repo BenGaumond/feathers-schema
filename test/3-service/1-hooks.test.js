@@ -7,7 +7,7 @@ import { assert } from 'chai'
 /* global describe it before after */
 //configure messages service
 
-describe('Hooks', () => {
+describe.only('Hooks', () => {
 
   let id, app, messages
 
@@ -124,30 +124,33 @@ describe('Hooks', () => {
 
       messages.before({
         create:[
-          ...messageSchema.hooks,
+          messageSchema.hooks.sanitize,
+          messageSchema.hooks.validate
         ]
       })
 
-
     })
 
-    it('Sanitizes schema properties on data', async () => {
+    it('Validates schema properties on data', async () => {
 
       let errors
 
       try {
-        await messages.create({ })
+        await messages.create({
+          body: 'omfg u are such a noob i b4ng3d ur mom l2p spawncampin f4& $UCKK1T punk!'.repeat(20),
+          author: '$$-420-BL@ZE-K1N&-$$',
+          scores: null
+        })
       } catch (err) {
         errors = err.errors
       }
 
-      assert.deepEqual(errors, { body: 'Required.', author: 'Required.'})
+      assert.deepEqual(errors, { body: 'Must have 144 or less characters.', author: 'May only contain letters and numbers.'})
 
     })
 
     after(async () => await app.end())
 
   })
-
 
 })

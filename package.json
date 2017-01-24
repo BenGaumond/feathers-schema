@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BenGaumond/feathers-schema.git"
+    "url": "git+https://github.com/BenZed/feathers-schema.git"
   },
   "keywords": [
     "feathers",
@@ -24,9 +24,9 @@
   "author": "Ben Gaumond",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/BenGaumond/feathers-schema/issues"
+    "url": "https://github.com/BenZed/feathers-schema/issues"
   },
-  "homepage": "https://github.com/BenGaumond/feathers-schema#readme",
+  "homepage": "https://github.com/BenZed/feathers-schema#readme",
   "devDependencies": {
     "app-module-path": "^2.2.0",
     "babel": "^6.5.2",

@@ -13,6 +13,12 @@ const schema = new Schema({
     required
   },
 
+  scores: [{
+    type: Number,
+    range: [0,5],
+    required
+  }],
+
   author: {
     type: String,
     length: ['<=', 20],

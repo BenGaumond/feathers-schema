@@ -10,7 +10,6 @@ const Definition = {
   description: String
 }
 
-
 describe('Schema Class', () => {
 
   it('Takes a plain object representing definitions as its first argument.', () => {
@@ -57,5 +56,7 @@ describe('Schema Class', () => {
       .forEach( canSkipValidation =>
         expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
+
+  it('Can be composed into other schemas')
 
 })

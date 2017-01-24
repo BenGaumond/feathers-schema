@@ -18,6 +18,13 @@ const fixKeys = obj => Object
   .keys(obj)
   .map(fixKey)
 
+const spreadable = {
+  *[Symbol.iterator]() {
+    for (const key in this)
+      yield this[key]
+  }
+}
+
 /******************************************************************************/
 // Data
 /******************************************************************************/
@@ -39,15 +46,17 @@ const RESERVED_PROPERTY_KEYS = [
 
 class PropertyBase {
 
-  addProperty(definition, key) {
+  addProperty(definition, key, Type = this.constructor) {
 
     if (!isPlainObject(this.properties))
-      this.properties = {}
+      this.properties = {
+        ...spreadable
+      }
 
     if (key in this.properties)
       throw new Error('Property already exists.')
 
-    this.properties[key] = new Property(definition, key)
+    this.properties[key] = new Type(definition, key)
 
   }
 
@@ -60,6 +69,7 @@ class PropertyBase {
 /******************************************************************************/
 
 function addCustom(defs, key, arr) {
+
   if (key in defs === false)
     return
 
@@ -99,11 +109,10 @@ function addStock(def, stock, arr) {
 
 class Property extends PropertyBase {
 
-  constructor(definition, path) {
+  constructor(definition, key) {
     super()
 
-    //Determin Path
-    this.path = array(path)
+    this.key = key
 
     //Determine if array
     this.array = is(definition, Array)
@@ -159,10 +168,13 @@ class Property extends PropertyBase {
 
     super.addProperty(definition, key)
 
-    this.properties[key].path = [...this.path, key]
   }
 
   async sanitize(input, params) {
+
+    //don't need to further sanitize input that isn't defined
+    if (!is(input))
+      return null
 
     input = array(input)
 
@@ -183,8 +195,10 @@ class Property extends PropertyBase {
         //arn't defined by it's sub-properties
         const sanitized = {}
 
-        for(const key in this.properties) {
-          const property = this.properties[key]
+        for (const property of this.properties) {
+
+          const { key } = property
+
           sanitized[key] = await property.sanitize(value[key], params)
         }
 
@@ -214,14 +228,15 @@ class Property extends PropertyBase {
 
   async validate(values, params) {
 
+    const isDefined = is(values)
     const isArray = is(values, Array)
     const any = this.type === ANY
 
     //validate array first
-    if (this.array && !isArray && !any)
+    if (this.array && !isArray && !any && isDefined)
       return this.type ? `Expected array of ${this.type.name}.` : 'Expected array.'
 
-    else if (!this.array && isArray && !any)
+    else if (!this.array && isArray && !any && isDefined)
       return `Expected single ${this.type.name}.`
 
     //after all that, cast it to an Array anyway
@@ -232,7 +247,7 @@ class Property extends PropertyBase {
     for (let i = 0; i < values.length; i++) {
 
       const value = values[i]
-      const isNull = !is(value)
+      const isDefined = is(value)
 
       let result = do {
 
@@ -249,12 +264,12 @@ class Property extends PropertyBase {
           'Cannot store NaN as a value.'
 
         //values of type Object should only apply for plain objects
-        else if (this.type === Object && !isNull && !isPlainObject(value))
+        else if (this.type === Object && isDefined && !isPlainObject(value))
           'Expected plain Object.'
 
         //A typed value can equal null, meaning that it is optional. If a value
         //isn't null, and isn't of the type specified, it shouldn't pass validation
-        else if (!any && !isNull && !is(value, this.type))
+        else if (!any && isDefined && !is(value, this.type))
           `Expected ${this.array ? 'array of ' : ''}${this.type.name}.`
 
         //All remaining values either fit their type or are elligable for 'ANY'
@@ -264,33 +279,31 @@ class Property extends PropertyBase {
       }
 
       //validate each property on the value
-      if (!result && this.properties) {
+      if (!result && this.properties) for (const property of this.properties) {
 
-        for(const key in this.properties) {
-          const property = this.properties[key]
-          const propResult = await property.validate(value[key], params)
+        const { key } = property
 
-          //if propResult is falsy, then it passed validation
-          if (!propResult)
-            continue
+        const propResult = await property.validate(value[key], params)
 
-          //ensure result is an object before filling the errors of this values
-          //sub properties
-          result = result || {}
-          result[key] = propResult
+        //if propResult is falsy, then it passed validation
+        if (!propResult)
+          continue
 
-        }
+        //ensure result is an object before filling the errors of this values
+        //sub properties
+        result = result || {}
+        result[key] = propResult
+
       }
 
       //if there are still no errors, we validate this property as a whole
-      if (!result) {
-        for (const validator of this.validators) {
-          result = await validator(value, params)
+      if (!result) for (const validator of this.validators) {
 
-          //if a validator failed, we don't need to continue
-          if (result)
-            break
-        }
+        result = await validator(value, params)
+
+        //if a validator failed, we don't need to continue
+        if (result)
+          break
       }
 
       //if this property isn't an array, we don't need to continue.
@@ -319,8 +332,6 @@ class Property extends PropertyBase {
   type = null
 
   array = false
-
-  path = null
 
   sanitizers = []
 
@@ -366,6 +377,10 @@ export default class Schema extends PropertyBase {
 
   }
 
+  addProperty(definition, key) {
+    super.addProperty(definition, key, Property)
+  }
+
   async sanitize(data, params = {}) {
 
     if (!isPlainObject(data))
@@ -376,12 +391,13 @@ export default class Schema extends PropertyBase {
 
     const sanitized = {}
 
-    for (const key in this.properties) {
+    for (const property of this.properties) {
+
+      const { key } = property
 
       if (key in data === false)
         continue
 
-      const property = this.properties[key]
       const value = await property.sanitize(data[key], params)
 
       sanitized[key] = value
@@ -401,9 +417,9 @@ export default class Schema extends PropertyBase {
 
     let errors = false
 
-    for (const key in this.properties) {
+    for (const property of this.properties) {
 
-      const property = this.properties[key]
+      const { key } = property
 
       const result = await property.validate(data[key], params)
 
@@ -424,16 +440,13 @@ export default class Schema extends PropertyBase {
 
   hooks = {
 
+    ...spreadable,
+
     populate: null,
 
     sanitize: null,
 
     validate: null,
-
-    *[Symbol.iterator]() {
-      for (const key in this)
-        yield this[key]
-    }
 
   }
 

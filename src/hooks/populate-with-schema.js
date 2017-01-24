@@ -1,5 +1,31 @@
 import Schema from '../schema'
 import is from 'is-explicit'
+import { isPlainObject } from '../helper'
+
+function fillWithProperties(data = {}, fill = {},  properties) {
+
+  if (!isPlainObject(data))
+    data = {}
+
+  for (const property of properties) {
+
+    const { key } = property
+
+    const hasKey = key in data
+
+    if (!hasKey)
+      data[key] = fill[key]
+
+    if (hasKey || property.array || !property.properties || !isPlainObject(fill[key]))
+      continue
+
+    data[key] = fillWithProperties(data[key], fill[key], property.properties)
+
+  }
+
+  return data
+
+}
 
 export default function populateWithSchema(schema) {
 
@@ -20,10 +46,9 @@ export default function populateWithSchema(schema) {
 
       const service = this
 
-      const doc =  await service.get(id)
+      const doc = await service.get(id)
 
-      // hook.data = {...doc, ...data}
-      //TODO implement proper populating, by walking the properties
+      hook.data = fillWithProperties(data, doc, schema.properties)
 
       next(null, hook)
 
