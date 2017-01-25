@@ -1,5 +1,6 @@
 import parseConfig from './parse-config'
 import isPlainObject from './is-plain-object'
+import array from './ensure-array'
 import is from 'is-explicit'
 
 /******************************************************************************/
@@ -21,11 +22,23 @@ const factory = (getValue, getResult, failMsg) => {
     if (!is(input))
       return PASS
 
-    const value = getValue(input)
-    return getResult(value)
-      ? PASS
-      : failMsg
+    const isArray = is(input, Array)
 
+    const results = array(input)
+      .map(item => {
+        const value = getValue(item)
+        return getResult(value)
+          ? PASS
+          : failMsg
+      })
+
+    //return an fail array if results contain at least one failure, and input
+    //wasnt an array to begin with
+    return array
+      .unwrap(
+        results,
+        !isArray || results.every(r => r == PASS)
+      )
   }
 }
 

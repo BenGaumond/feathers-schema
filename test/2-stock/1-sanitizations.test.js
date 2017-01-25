@@ -60,6 +60,19 @@ describe('Stock General Sanitizers', () => {
       return testSchema(schema, null, def)
 
     })
+
+    it('handles arrays', async () => {
+
+      const def = [0,1,2,3,4]
+
+      const schema = createSchema([{
+        type: Number,
+        default: def
+      }])
+
+      return testSchema(schema, 'wtf is this shit', def)
+
+    })
   })
 })
 
@@ -86,6 +99,17 @@ describe('Stock String Sanitizers', () => {
       return schemaShouldNotThrow({type: String, lowercase: true})
     })
 
+    it('handles arrays', async () => {
+      const schema = createSchema([{
+        type: String,
+        lowercase: true
+      }])
+
+      const value = ['FUCK', 'YEAH', 'BRO']
+
+      return testSchema(schema, value, value.map(str => str.toLowerCase()))
+    })
+
   })
 
   describe('uppercase', () => {
@@ -109,6 +133,16 @@ describe('Stock String Sanitizers', () => {
       return schemaShouldNotThrow({type: String, lowercase: true})
     })
 
+    it('handles arrays', async () => {
+      const schema = createSchema([{
+        type: String,
+        uppercase: true
+      }])
+      const value = ['i', 'wanna', 'be', 'louder']
+
+      return testSchema(schema, value, value.map(str => str.toUpperCase()))
+    })
+
   })
 
   describe('trim', () => {
@@ -130,6 +164,16 @@ describe('Stock String Sanitizers', () => {
     it('can only be applied to string properties', async () => {
       await schemaShouldThrow({type: Number, trim: true})
       return schemaShouldNotThrow({type: String, trim: true})
+    })
+
+    it('handles arrays', async () => {
+      const schema = createSchema([{
+        type: String,
+        trim: true
+      }])
+      const value = [' too   ', '  much\t\t\n  ', '   whitespace     ']
+
+      return testSchema(schema, value, value.map(str => str.trim()))
     })
 
   })

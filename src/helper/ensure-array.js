@@ -1,10 +1,18 @@
 import is from 'is-explicit'
 
-export default function array(...args) {
+export default function ensureArray(input, condition = true) {
 
-  if (args.length === 1)
-    args = args[0]
+  if (!condition)
+    return input
 
-  return is(args, Array) ? args : [args]
+  return is(input, Array) ? input : [input]
 
+}
+
+ensureArray.unwrap = (input, condition = true) => {
+
+  if (!condition)
+    return input
+
+  return is(input, Array) ? input[0] : input
 }

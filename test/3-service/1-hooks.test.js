@@ -7,7 +7,7 @@ import { assert } from 'chai'
 /* global describe it before after */
 //configure messages service
 
-describe.only('Hooks', () => {
+describe('Hooks', () => {
 
   let id, app, messages
 
@@ -145,7 +145,11 @@ describe.only('Hooks', () => {
         errors = err.errors
       }
 
-      assert.deepEqual(errors, { body: 'Must have 144 or less characters.', author: 'May only contain letters and numbers.'})
+      assert.deepEqual(errors, {
+        body: 'Must have 144 or less characters.',
+        author: 'May only contain letters and numbers.',
+        scores: 'Required.'
+      })
 
     })
 

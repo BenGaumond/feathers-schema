@@ -4,7 +4,7 @@ import { populateWithSchema, sanitizeWithSchema, validateWithSchema } from './ho
 import * as sanitizers  from './sanitizers'
 import * as validators from './validators'
 
-import { ALL, ANY, cast } from './types'
+import { ALL, ANY, cast, check } from './types'
 import is from 'is-explicit'
 
 /******************************************************************************/
@@ -13,7 +13,6 @@ import is from 'is-explicit'
 
 const fixKey = key => key.replace(/_|@/g, '')
 
-//Quick helper function to
 const fixKeys = obj => Object
   .keys(obj)
   .map(fixKey)
@@ -80,11 +79,16 @@ function addCustom(defs, key, arr) {
     try {
       const result = factory.call(this, def)
 
+      //TODO this doesn't work. Factories may well throw valid errors in the event
+      //of a type mismatch, or something.
+
       //We're expecting custom validators to be a function factory.
       //However, if they don't return a function, we'll assume that the
       //factory is actually the custom validator, and not it's result.
       const func = is(result, Function) ? result : factory
+
       arr.push(func)
+
     } catch (err) {
 
       //if the factory call fails for any reason, we'll also assume it's a custom validator
@@ -172,160 +176,94 @@ class Property extends PropertyBase {
 
   async sanitize(input, params) {
 
-    //don't need to further sanitize input that isn't defined
-    if (!is(input))
-      return null
+    let values = cast(input, this.type, this.array)
 
-    input = array(input)
+    //then we sanitize the value as a whole
+    for (const sanitizer of this.sanitizers)
+      values = await sanitizer(values, params)
 
-    let output = this.array ? [] : null
+    if (!this.properties)
+      return values
 
-    for (let value of input) {
-
-      //ensure the value is the type of this property
-      value = cast(value, this.type)
-
-      //if this property has sub properties, and the value survived casting, it
-      //must be an object, so we only need to check if it's null or not.
-      //Then sanitize each of the values sub properties.
-      if (value !== null && this.properties) {
-
-        //We create a seperate object for the sanitized data, so that
-        //this method doesn't return an object with any properties that
-        //arn't defined by it's sub-properties
-        const sanitized = {}
-
-        for (const property of this.properties) {
-
-          const { key } = property
-
-          sanitized[key] = await property.sanitize(value[key], params)
-        }
-
-        value = sanitized
-      }
-
-      //then we sanitize the value as a whole
-      for (const sanitizer of this.sanitizers)
-        value = await sanitizer(value, params)
-
-      //if this property isn't an array, we don't need to continue. If the input
-      //value was an array, this property will only take the first value.
-      if (!this.array) {
-        output = value
-        break
-      }
-
-      //if we've gotten here, output will definetly be an array. We also only
-      //need to push values if they're not null
-      if (is(value))
-        output.push(value)
-
-    }
-
-    return output
-  }
-
-  async validate(values, params) {
-
-    const isDefined = is(values)
-    const isArray = is(values, Array)
-    const any = this.type === ANY
-
-    //validate array first
-    if (this.array && !isArray && !any && isDefined)
-      return this.type ? `Expected array of ${this.type.name}.` : 'Expected array.'
-
-    else if (!this.array && isArray && !any && isDefined)
-      return `Expected single ${this.type.name}.`
-
-    //after all that, cast it to an Array anyway
-    values = isArray ? values : [values]
-
-    const errors = []
+    values = array(values)
 
     for (let i = 0; i < values.length; i++) {
-
       const value = values[i]
-      const isDefined = is(value)
 
-      let result = do {
+      //if the sanitizers array returned a value that isn't a plain object
+      if (!isPlainObject(value))
+        continue
 
-        //Symbols, typed or not, cannot be stored in a Database
-        if (is(value, Symbol))
-          'Cannot store a Symbol as a value.'
+      //We create a seperate object for the sanitized data, so that
+      //this method doesn't return an object with any properties that
+      //arn't defined by it's sub-properties
+      const sanitized = {}
 
-        //Neither can functions
-        else if (is(value, Function))
-          'Cannot store a Function as a value.'
-
-        //Nor should NaN
-        else if (Number.isNaN(value))
-          'Cannot store NaN as a value.'
-
-        //values of type Object should only apply for plain objects
-        else if (this.type === Object && isDefined && !isPlainObject(value))
-          'Expected plain Object.'
-
-        //A typed value can equal null, meaning that it is optional. If a value
-        //isn't null, and isn't of the type specified, it shouldn't pass validation
-        else if (!any && isDefined && !is(value, this.type))
-          `Expected ${this.array ? 'array of ' : ''}${this.type.name}.`
-
-        //All remaining values either fit their type or are elligable for 'ANY'
-        else
-          false
-
-      }
-
-      //validate each property on the value
-      if (!result && this.properties) for (const property of this.properties) {
-
+      for (const property of this.properties) {
         const { key } = property
 
-        const propResult = await property.validate(value[key], params)
+        sanitized[key] = await property.sanitize(value[key], params)
+      }
 
-        //if propResult is falsy, then it passed validation
-        if (!propResult)
+      values[i] = sanitized
+    }
+
+    return is.array ? values : values[0]
+  }
+
+  async validate(value, params) {
+
+    let results = check(value, this.type, this.array)
+    if (results)
+      return results
+
+    //if we passed type checking, we run each of the validators on the value
+    for (const validator of this.validators) {
+      results = await validator(value, params)
+
+      //if the validator failed, we don't need to continue
+      if (results)
+        return results
+    }
+
+    //if there are no sub properties, we don't need to continue
+    if (!this.properties)
+      return results
+
+    const values = array(value)
+
+    results = array(results)
+
+    for (let i = 0; i < values.length; i++) {
+      const value = values[i]
+      let result = false
+
+      for (const property of this.properties) {
+        const { key } = property
+
+        //we don't need to check if value is an object, because it's only possible
+        //to get here if it is one
+        const keyResult = await property.validate(value[key], params)
+        if (!keyResult)
           continue
 
         //ensure result is an object before filling the errors of this values
         //sub properties
         result = result || {}
-        result[key] = propResult
+        result[key] = keyResult
 
       }
 
-      //if there are still no errors, we validate this property as a whole
-      if (!result) for (const validator of this.validators) {
-
-        result = await validator(value, params)
-
-        //if a validator failed, we don't need to continue
-        if (result)
-          break
-      }
-
-      //if this property isn't an array, we don't need to continue.
-      if (!this.array)
-        return result
-
-      //else we assign the result for this index, even if the result is false, and
-      //the validation passed.
-      else
-        errors[i] = result
-
+      result[i] = result
     }
 
-    //array validation is finished. If the values passed validation we'll have
-    //an array full of 'false', so we need to check to ensure there actually was
-    //an error to send back
-    for (const result of errors)
-      if (result)
-        return errors
+    return this.array
 
-    //if we've gotten here, validation is a complete pass
-    return false
+      //if this is an array value, we only send back an array of results if any of the results are truthy
+      ? results.some(result => result) ? results : false
+
+      //otherwise the first result in results will be the result of the singular type check
+      : results[0]
 
   }
 
@@ -392,14 +330,12 @@ export default class Schema extends PropertyBase {
     const sanitized = {}
 
     for (const property of this.properties) {
-
       const { key } = property
 
       if (key in data === false)
         continue
 
       const value = await property.sanitize(data[key], params)
-
       sanitized[key] = value
     }
 
@@ -418,7 +354,6 @@ export default class Schema extends PropertyBase {
     let errors = false
 
     for (const property of this.properties) {
-
       const { key } = property
 
       const result = await property.validate(data[key], params)

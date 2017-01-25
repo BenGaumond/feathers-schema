@@ -1,26 +1,38 @@
 import { assert } from '../types'
+import { array } from '../helper'
 import is from 'is-explicit'
 
-export function lowercase() {
+function stringSanitizer(func) {
 
   assert(this.type, String)
 
-  return value => is(value, String) ? value.toLowerCase() : value
+  return input => {
 
+    input = array(input)
+      .filter(str => is(str, String))
+      .map(func)
+
+    return array.unwrap(input, !this.array)
+  }
+
+}
+
+export function lowercase() {
+
+  return stringSanitizer
+    .call(this, str => str.toLowerCase())
 }
 
 export function uppercase() {
 
-  assert(this.type, String)
-
-  return value => is(value, String) ? value.toUpperCase() : value
+  return stringSanitizer
+    .call(this, str => str.toUpperCase())
 
 }
 
 export function trim() {
 
-  assert(this.type, String)
-
-  return value => is(value, String) ? value.trim() : value
+  return stringSanitizer
+    .call(this, str => str.trim())
 
 }

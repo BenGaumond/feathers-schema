@@ -10,9 +10,9 @@ async function runValidator (schema, value, expected) {
 
   const result = await schema.validate({ prop: value })
 
-  if (is(expected, String)) {
+  if (is(expected, String, Object)) {
     const explicit = result ? result.prop : result
-    return assert.equal(explicit, expected)
+    return assert.deepEqual(explicit, expected)
   }
 
   const pass = result ? 'FAIL' : 'PASS'
@@ -47,6 +47,26 @@ describe('Stock General Validators', () => {
       const schema = createSchema({ type: String, required: msg })
 
       await runValidator(schema, null, msg)
+    })
+
+    it('handles array', () => {
+
+      const schema = createSchema([{ type: String, required: true }])
+      const arrs = [['OY'], ['yes'], ['no'], null]
+
+      return Promise.all(arrs.map(async arr => {
+
+        return await runValidator(schema, arr, !arr)
+
+      }))
+    })
+
+    it('zero length arrays fail', async () => {
+
+      const schema = createSchema([{ type: String, required: true }])
+
+      await runValidator(schema, [], 'Required.')
+
     })
 
   })
@@ -96,6 +116,14 @@ describe('Stock General Validators', () => {
 
       await runValidator(schema, 0, msg)
     })
+
+    it('handles arrays', async () => {
+      const msg = 'FAIL'
+      const schema = createSchema([{ type: Number, enum: [acceptedNums, msg]}])
+      await runValidator(schema, [1,2,3,4,5], PASS)
+      await runValidator(schema, [1,2,3,4,0], [PASS, PASS, PASS, PASS, msg])
+
+    })
   })
 })
 
@@ -110,7 +138,6 @@ describe('Stock String Validators', () => {
       const values = Array.from({length: 11}, (u,i) => '*'.repeat(i))
 
       for (let i = 0; i < tests.length; i++) {
-
         const test = tests[i]
         const schema = createSchema({ type: String, length: test })
 
@@ -118,8 +145,8 @@ describe('Stock String Validators', () => {
 
         for (const value of values)
           await runValidator(schema, value, !expect(value.length))
-
       }
+
     })
 
     it('requires a min and max value, or a value and a comparer', async () => {
@@ -157,9 +184,19 @@ describe('Stock String Validators', () => {
       await runValidator(schema, null, false)
     })
 
+    it('handles arrays', async () => {
+
+      const schema = createSchema([{ type: String, length:[0,5, '<=>', 'Bad.'] }])
+
+      const arr = Array.from({length: 10}, (u,i) => '*'.repeat(i))
+
+      return await runValidator(schema, arr, arr.map(str => str.length <= 5 ? false : 'Bad.'))
+    })
+
   })
 
   const phoneRegex = /^\d\d\d-\d\d\d\d$/
+
   describe('format validator', () => {
 
     it('fails if value doesn\'t pass regex test', async () => {
@@ -194,15 +231,22 @@ describe('Stock String Validators', () => {
           await schemaShouldThrow({ type, format: phoneRegex }, 'Expected type: String')
     })
 
+    it('handles arrays', async () => {
+      const values = ['895-1029', '019-1298', 'no phone', 'technology is for suckers', '891-1092s']
+      const schema = createSchema([{ type: String, format: [phoneRegex, 'Bad.'] }])
+
+      await runValidator(schema, values, values.map( v => phoneRegex.test(v) ? false : 'Bad.'))
+    })
+
   })
 
   describe('email validator', () => {
+    const values = ['jerry@email.com', 'steve+watson@google.com', 'clancy', 'carol@www', 'reddit.com']
+    const results = [PASS, PASS, FAIL, FAIL, FAIL]
 
     it('fails if value isn\'t formatted as an email', async () => {
 
       const schema = createSchema({ type: String, email: true })
-      const values = ['jerry@email.com', 'steve+watson@google.com', 'clancy', 'carol@www', 'reddit.com']
-      const results = [PASS, PASS, FAIL, FAIL, FAIL]
 
       for (let i = 0; i < values.length; i++) {
         const expected = results[i]
@@ -231,15 +275,23 @@ describe('Stock String Validators', () => {
         else
           await schemaShouldThrow({ type, email: true }, 'Expected type: String')
     })
+
+    it('handles arrays', async () => {
+      const schema = createSchema([{ type: String, email: 'Bad.' }])
+
+      await runValidator(schema, values, results.map(result => result === PASS ? PASS : 'Bad.'))
+    })
   })
 
   describe('alphanumeric validator', () => {
 
+    const values = ['1293khjf', 'aceOfBase123', ':)', 'lol what', '<html/>']
+    const results = [PASS, PASS, FAIL, FAIL, FAIL]
+
     it('fails if value isn\'t alphanumeric', async () => {
 
       const schema = createSchema({ type: String, alphanumeric: true })
-      const values = ['1293khjf', 'aceOfBase123', ':)', 'lol what', '<html/>']
-      const results = [PASS, PASS, FAIL, FAIL, FAIL]
+
 
       for (let i = 0; i < values.length; i++) {
         const expected = results[i]
@@ -268,15 +320,21 @@ describe('Stock String Validators', () => {
         else
           await schemaShouldThrow({ type, alphanumeric: true }, 'Expected type: String')
     })
+
+    it('handles arrays', async () => {
+      const schema = createSchema([{ type: String, alphanumeric: 'Bad.' }])
+
+      await runValidator(schema, values, results.map(result => result === PASS ? PASS : 'Bad.'))
+    })
   })
 
   describe('nospaces validator', () => {
+    const values = ['snake_case', 'one-two-three', '"  "', 'lol what', '01 10 01 10']
+    const results = [PASS, PASS, FAIL, FAIL, FAIL]
 
     it('fails if value has spaces', async () => {
 
       const schema = createSchema({ type: String, nospaces: true })
-      const values = ['snake_case', 'one-two-three', '"  "', 'lol what', '01 10 01 10']
-      const results = [PASS, PASS, FAIL, FAIL, FAIL]
 
       for (let i = 0; i < values.length; i++) {
         const expected = results[i]
@@ -305,6 +363,13 @@ describe('Stock String Validators', () => {
         else
           await schemaShouldThrow({ type, nospaces: true }, 'Expected type: String')
     })
+
+    it('handles arrays', async () => {
+      const schema = createSchema([{ type: String, nospaces: 'Bad.' }])
+
+      await runValidator(schema, values, results.map(result => result === PASS ? PASS : 'Bad.'))
+    })
+
   })
 
 })
@@ -312,6 +377,8 @@ describe('Stock String Validators', () => {
 describe('Stock Number Validators', () => {
 
   describe('range validator', () => {
+
+
 
     it('fails if value doesn\'t comply with specified parameters.', async () => {
 
@@ -368,6 +435,13 @@ describe('Stock Number Validators', () => {
       await runValidator(schema, null, false)
     })
 
+    it('handles arrays', async () => {
+      const values = [1,2,3,4,5,6,7,8,9,10]
+      const schema = createSchema([{ type: Number, range: [0, 4, '<=>', 'Bad.'] }])
+
+      await runValidator(schema, values, values.map(value => value <= 4 ? PASS : 'Bad.'))
+    })
+
   })
 
   describe('even validator', () => {
@@ -403,6 +477,13 @@ describe('Stock Number Validators', () => {
       const schema = createSchema({ type: Number, even: msg })
 
       await runValidator(schema, 9, msg)
+    })
+
+    it('handles arrays', async () => {
+      const values = [1,2,3,4,5,6,7,8,9,10]
+      const schema = createSchema([{ type: Number, even: 'Bad.' }])
+
+      await runValidator(schema, values, values.map(value => value % 2 === 0 ? PASS : 'Bad.'))
     })
 
   })
@@ -441,6 +522,14 @@ describe('Stock Number Validators', () => {
 
       await runValidator(schema, 10, msg)
     })
+
+    it('handles arrays', async () => {
+      const values = [1,2,3,4,5,6,7,8,9,10]
+      const schema = createSchema([{ type: Number, odd: 'Bad.' }])
+
+      await runValidator(schema, values, values.map(value => value % 2 === 1 ? PASS : 'Bad.'))
+    })
+
 
   })
 

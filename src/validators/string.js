@@ -1,4 +1,4 @@
-import { parseConfig, rangeValidatorFactory } from '../helper'
+import { parseConfig, rangeValidatorFactory, array } from '../helper'
 import { assert } from '../types'
 import is from 'is-explicit'
 
@@ -29,12 +29,20 @@ export function format(...config) {
     msg: { type: String, default: 'Invalid format.' }
   })
 
-  return value =>
+  return input => {
 
-    !is(value) ? PASS :
+    if (!is(input))
+      return PASS
 
-    regEx.test(value) ? PASS : msg
+    const results = array(input)
+      .map(item => regEx.test(item) ? PASS : msg)
 
+    return array
+      .unwrap(
+        results,
+        !this.array || results.every(result => result == PASS)
+      )
+  }
 }
 
 const EMAIL_REGEX =

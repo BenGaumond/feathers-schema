@@ -1,7 +1,7 @@
 import ObjectId from 'bson-objectid'
 import { Buffer } from 'buffer'
 import is from 'is-explicit'
-import { isPlainObject } from './helper'
+import { isPlainObject, array } from './helper'
 
 const { freeze } = Object
 
@@ -92,7 +92,7 @@ const ALL = [ ]
 
 const methods = new Map()
 
-reset()
+resetToDefault()
 
 /******************************************************************************/
 // Exports
@@ -116,7 +116,7 @@ export function setCustom(type, method) {
   methods.set(type, method)
 }
 
-export function reset() {
+export function resetToDefault() {
 
   ALL.length = 0
 
@@ -146,35 +146,111 @@ export function assert(type, ...validTypes) {
     throw new Error(`Expected type: ${validTypes.map(validType => name(validType))}`)
 }
 
-export function cast(value, type) {
+export function check(input, type, asArray) {
 
   if (!ALL.includes(type))
     throw new Error('invalid type argument.')
 
-  //empty values, or values that shouldn't be cast at all, are returned as anull
-  if (!is(value) || value === '' || is(value, Symbol, Function) || Number.isNaN(value))
-    return null
+  const isArray = is(input, Array)
+  const any = type === ANY
+  const isDefined = is(input)
+  const isExplicit = !any && isDefined
 
-  //If the value is already of the type specified, the value is considered casted.
-  //Does not apply if type is Object, because this would ruin custom types.
-  if (type !== Object && (type === ANY || is(value, type)))
-    return value
+  if (asArray && !isArray && isExplicit)
+    return `Expected array of ${name(type)}.`
 
-  try {
+  else if (!asArray && isArray && isExplicit)
+    return `Expected single ${name(type)}.`
 
-    const casted = methods.get(type)(value)
+  const values = array(input)
 
-    //in case of a custom cast, we have to check to ensure the value
-    //is actually of the type it's supposed to cast, and also ensure
-    //it didn't result in an empty string, which should be cast to null
-    return is(casted, type) && casted !== ''
-      ? casted
-      : null
+  for (let i = 0; i < values.length; i++) {
 
-  } catch (err) {
+    const value = values[i]
 
-    return null
+    const error = is(value, Symbol)
+      ? 'Cannot store a Symbol as a value.'
+
+      //Neither can functions
+      : is(value, Function)
+      ? 'Cannot store a Function as a value.'
+
+      //Nor should NaN
+      : Number.isNaN(value)
+      ? 'Cannot store NaN as a value.'
+
+      //values of type Object should only apply for plain objects
+      : type === Object && isDefined && !isPlainObject(value)
+      ? `Expected ${asArray ? 'array of plain objects.' : 'a plain object.'}`
+
+      //A typed value can equal null, meaning that it is optional. If a value
+      //isn't null, and isn't of the type specified, it shouldn't pass validation
+      : isExplicit && !is(value, type)
+      ? `Expected ${asArray ? 'array of ' : ''}${name(type)}${asArray ? 's' : ''}.`
+
+      //All remaining values either fit their type or are elligable for 'ANY'
+      : false
+
+    if (error)
+      return error
 
   }
 
+  return false
+
+}
+
+export function cast(input, type, asArray) {
+
+  if (!ALL.includes(type))
+    throw new Error('invalid type argument.')
+
+  const inputWasArray = is(input, Array)
+
+  const values = array(input)
+  const output = []
+
+  for (const value of values) {
+
+    //empty values, or values that shouldn't be cast at all, are returned as anull
+    if (!is(value) || value === '' || is(value, Symbol, Function) || Number.isNaN(value))
+      continue
+
+    //If the value is already of the type specified, the value is considered casted.
+    //Does not apply if type is Object, because this would ruin custom types.
+    if (type !== Object && (type === ANY || is(value, type))) {
+      output.push(value)
+      continue
+    }
+
+    try {
+      const casted = methods.get(type)(value)
+
+      //in case of a custom cast, we have to check to ensure the value
+      //is actually of the type it's supposed to cast, and also ensure
+      //it didn't result in an empty string, which should be cast to null
+      if (is(casted, type) && casted !== '')
+        output.push(casted)
+
+    } catch (err) {} //eslint-disable-line no-empty
+  }
+
+  //whats this spaghetti? it satisfies all the edge cases:
+  // asArray / input  /  sanitize  /  output
+  // yes       null   => []        => null
+  // yes       []     => []        => []
+  // yes       fail   => []        => null
+  // yes       pass   => [pass]    => [pass]
+  // yes       [fail] => []        => []
+  // yes       [pass] => [pass]    => [pass]
+  // no        [pass] => [pass]    => pass
+  // no        [fail] => []        => null
+  // no        pass   => [pass]    => pass
+  // no        fail   => []        => null
+
+  return asArray && (inputWasArray || output.length > 0)
+    ? output
+    : is(output[0])
+      ? output[0]
+      : null
 }
