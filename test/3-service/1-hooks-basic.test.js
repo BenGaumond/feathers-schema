@@ -1,11 +1,41 @@
 
 import App from '../app'
-import messageSchema from './message-schema'
 import memory from 'feathers-memory'
 import { assert } from 'chai'
 
 /* global describe it before after */
 //configure messages service
+
+import Schema from '../../lib'
+// import ObjectId from 'bson-objectid'
+
+const trim = true, alphanumeric = true, required = true
+
+const messageSchema = new Schema({
+
+  body: {
+    type: String,
+    length: ['<=', 144],
+    trim,
+    required
+  },
+
+  scores: [{
+    type: Number,
+    range: [0, 5],
+    required
+  }],
+
+  author: {
+    type: String,
+    length: ['<=', 20],
+    alphanumeric,
+    trim,
+    required
+  }
+
+})
+
 
 describe('Hooks', () => {
 
@@ -68,6 +98,8 @@ describe('Hooks', () => {
       assert.equal(authorError, 'Required.')
     })
 
+    it('Can only be used as a before update/patch or create hook.')
+
     after(async () => await app.end())
 
   })
@@ -105,8 +137,10 @@ describe('Hooks', () => {
         body: 'message that needs trimming',
         author: 'Joe User'
       })
-
     })
+
+    it('Can only be used as a before update/patch or create hook.')
+
 
     after(async () => await app.end())
 
@@ -152,6 +186,9 @@ describe('Hooks', () => {
       })
 
     })
+
+    it('Can only be used as a before update/patch or create hook.')
+
 
     after(async () => await app.end())
 

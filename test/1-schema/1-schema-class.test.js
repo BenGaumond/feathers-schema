@@ -1,6 +1,8 @@
 import { expect } from 'chai'
 import is from 'is-explicit'
 
+import { schemasShouldBeEquivalent } from '../helper'
+
 import Schema from '../../lib'
 
 /* global describe it */
@@ -57,6 +59,55 @@ describe('Schema Class', () => {
         expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
 
-  it('Can be composed into other schemas')
+  it.skip('Can be composed into other schemas', () => {
+
+    const authorSchema = new Schema({
+      name: {
+        first: { type: String, required: true, length: ['<=', 24] },
+        last: { type: String, required: true, length: ['<=', 24] }
+      },
+      age: { type: Number, range: ['>', 16, 'Must be over 16 years old.'] }
+    })
+
+    const commentSchema = new Schema({
+      body: String,
+      author: authorSchema,
+      timestamp: Date
+    })
+
+    const articleSchema = new Schema({
+      writeup: { type: String, required: true },
+      author: authorSchema,
+      comments: [commentSchema]
+    })
+
+    const uncomposedArticleSchema = new Schema({
+      writeup: { type: String, required: true },
+
+      author: {
+        name: {
+          first: { type: String, required: true, length: ['<=', 24] },
+          last: { type: String, required: true, length: ['<=', 24] }
+        },
+        age: { type: Number, range: ['>', 16, 'Must be over 16 years old.'] }
+      },
+
+      comments: [{
+        body: String,
+        author: {
+          name: {
+            first: { type: String, required: true, length: ['<=', 24] },
+            last: { type: String, required: true, length: ['<=', 24] }
+          },
+          age: { type: Number, range: ['>', 16, 'Must be over 16 years old.'] }
+        },
+        timestamp: Date
+      }]
+
+    })
+
+    return schemasShouldBeEquivalent(articleSchema, uncomposedArticleSchema)
+
+  })
 
 })

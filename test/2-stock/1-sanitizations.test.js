@@ -1,6 +1,6 @@
 import { assert  } from 'chai'
 
-import { createSchema, schemaShouldThrow, schemaShouldNotThrow } from './helper'
+import { createSinglePropertySchemaa, schemaShouldThrow, schemaShouldNotThrow } from '../helper'
 
 /* global describe it */
 
@@ -17,7 +17,7 @@ describe('Stock General Sanitizers', () => {
     it('sets a default value, if initial value is null', () => {
 
       const def = 'Somebody'
-      const schema = createSchema({
+      const schema = createSinglePropertySchemaa({
         type: String,
         default: def
       })
@@ -52,7 +52,7 @@ describe('Stock General Sanitizers', () => {
         default: def
       })
 
-      const schema = createSchema({
+      const schema = createSinglePropertySchemaa({
         type: Number,
         default: () => def
       })
@@ -65,7 +65,7 @@ describe('Stock General Sanitizers', () => {
 
       const def = [0,1,2,3,4]
 
-      const schema = createSchema([{
+      const schema = createSinglePropertySchemaa([{
         type: Number,
         default: def
       }])
@@ -82,7 +82,7 @@ describe('Stock String Sanitizers', () => {
 
     it('lowers the case of string values', () => {
 
-      const schema = createSchema({
+      const schema = createSinglePropertySchemaa({
         type: String,
         lowercase: true
       })
@@ -100,7 +100,7 @@ describe('Stock String Sanitizers', () => {
     })
 
     it('handles arrays', async () => {
-      const schema = createSchema([{
+      const schema = createSinglePropertySchemaa([{
         type: String,
         lowercase: true
       }])
@@ -116,7 +116,7 @@ describe('Stock String Sanitizers', () => {
 
     it('ups the case of string values', () => {
 
-      const schema = createSchema({
+      const schema = createSinglePropertySchemaa({
         type: String,
         uppercase: true
       })
@@ -134,7 +134,7 @@ describe('Stock String Sanitizers', () => {
     })
 
     it('handles arrays', async () => {
-      const schema = createSchema([{
+      const schema = createSinglePropertySchemaa([{
         type: String,
         uppercase: true
       }])
@@ -149,7 +149,7 @@ describe('Stock String Sanitizers', () => {
 
     it('trim string values of whitespace', () => {
 
-      const schema = createSchema({
+      const schema = createSinglePropertySchemaa({
         type: String,
         trim: true
       })
@@ -167,7 +167,7 @@ describe('Stock String Sanitizers', () => {
     })
 
     it('handles arrays', async () => {
-      const schema = createSchema([{
+      const schema = createSinglePropertySchemaa([{
         type: String,
         trim: true
       }])

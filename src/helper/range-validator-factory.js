@@ -105,7 +105,7 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
 
   //more checks to find invalid configurations that arn't explicitly defined
   if (numbers.length === 0)
-    throw new Error('No limits provided.')
+    throw new Error('Number value required.')
 
   else if (numbers.length === 1 && isBetween)
     throw new Error('For comparing a range, a min and max value is required.')

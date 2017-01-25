@@ -2,7 +2,7 @@ import { assert  } from 'chai'
 import { ALL } from '../../lib/types'
 import is from 'is-explicit'
 
-import { createSchema, schemaShouldThrow, schemaShouldNotThrow } from './helper'
+import { createSinglePropertySchemaa, schemaShouldThrow, schemaShouldNotThrow } from '../helper'
 
 /* global describe it */
 
@@ -29,7 +29,7 @@ describe('Stock General Validators', () => {
   describe('required validator', () => {
 
     it('fails if input is null or undefined', async () => {
-      const schema = createSchema({ type: String, required: true })
+      const schema = createSinglePropertySchemaa({ type: String, required: true })
       const values = ['whatever', null, 'string', undefined]
 
       for (const value of values)
@@ -37,21 +37,21 @@ describe('Stock General Validators', () => {
     })
 
     it('optionally takes a predicate function that returns weather value is required.', async () => {
-      const schema = createSchema({ type: String, required: () => false })
+      const schema = createSinglePropertySchemaa({ type: String, required: () => false })
 
       await runValidator(schema, null, PASS)
     })
 
     it('optionally takes a error message string', async () => {
       const msg = 'Must have.'
-      const schema = createSchema({ type: String, required: msg })
+      const schema = createSinglePropertySchemaa({ type: String, required: msg })
 
       await runValidator(schema, null, msg)
     })
 
     it('handles array', () => {
 
-      const schema = createSchema([{ type: String, required: true }])
+      const schema = createSinglePropertySchemaa([{ type: String, required: true }])
       const arrs = [['OY'], ['yes'], ['no'], null]
 
       return Promise.all(arrs.map(async arr => {
@@ -63,7 +63,7 @@ describe('Stock General Validators', () => {
 
     it('zero length arrays fail', async () => {
 
-      const schema = createSchema([{ type: String, required: true }])
+      const schema = createSinglePropertySchemaa([{ type: String, required: true }])
 
       await runValidator(schema, [], 'Required.')
 
@@ -78,7 +78,7 @@ describe('Stock General Validators', () => {
 
     it('fails if input isn\'t included in an enumeration', async () => {
 
-      const schema = createSchema({ type: Number, enum: acceptedNums })
+      const schema = createSinglePropertySchemaa({ type: Number, enum: acceptedNums })
       const values = [null, undefined, 1, 2, 3, 10, Infinity]
 
       for (const value of values) {
@@ -89,7 +89,7 @@ describe('Stock General Validators', () => {
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: Number, enum: acceptedNums })
+      const schema = createSinglePropertySchemaa({ type: Number, enum: acceptedNums })
       await runValidator(schema, null, false)
     })
 
@@ -112,14 +112,14 @@ describe('Stock General Validators', () => {
 
     it('optionally takes a error message string', async () => {
       const msg = `Only ${acceptedNums} will do.`
-      const schema = createSchema({ type: Number, enum: [acceptedNums, msg] })
+      const schema = createSinglePropertySchemaa({ type: Number, enum: [acceptedNums, msg] })
 
       await runValidator(schema, 0, msg)
     })
 
     it('handles arrays', async () => {
       const msg = 'FAIL'
-      const schema = createSchema([{ type: Number, enum: [acceptedNums, msg]}])
+      const schema = createSinglePropertySchemaa([{ type: Number, enum: [acceptedNums, msg]}])
       await runValidator(schema, [1,2,3,4,5], PASS)
       await runValidator(schema, [1,2,3,4,0], [PASS, PASS, PASS, PASS, msg])
 
@@ -139,7 +139,7 @@ describe('Stock String Validators', () => {
 
       for (let i = 0; i < tests.length; i++) {
         const test = tests[i]
-        const schema = createSchema({ type: String, length: test })
+        const schema = createSinglePropertySchemaa({ type: String, length: test })
 
         const expect = expects[i]
 
@@ -174,19 +174,19 @@ describe('Stock String Validators', () => {
 
     it('optionally takes a error message string', async () => {
       const msg = '8 or less characters, please.'
-      const schema = createSchema({ type: String, length: { value: 8, compare: '<=', msg } })
+      const schema = createSinglePropertySchemaa({ type: String, length: { value: 8, compare: '<=', msg } })
 
       await runValidator(schema, 'tattoos-are-rad', msg)
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: String, length: { min: 2, max: 4, compare: '<=>' } })
+      const schema = createSinglePropertySchemaa({ type: String, length: { min: 2, max: 4, compare: '<=>' } })
       await runValidator(schema, null, false)
     })
 
     it('handles arrays', async () => {
 
-      const schema = createSchema([{ type: String, length:[0,5, '<=>', 'Bad.'] }])
+      const schema = createSinglePropertySchemaa([{ type: String, length:[0,5, '<=>', 'Bad.'] }])
 
       const arr = Array.from({length: 10}, (u,i) => '*'.repeat(i))
 
@@ -201,7 +201,7 @@ describe('Stock String Validators', () => {
 
     it('fails if value doesn\'t pass regex test', async () => {
 
-      const schema = createSchema({ type: String, format: phoneRegex })
+      const schema = createSinglePropertySchemaa({ type: String, format: phoneRegex })
       const values = ['895-1029', '019-1298', 'i dont wanna give my phone number', 'i forgot my phone number', null]
 
       for (const value of values) {
@@ -213,13 +213,13 @@ describe('Stock String Validators', () => {
 
     it('optionally takes a error message string', async () => {
       const msg = 'Must be a phone number.'
-      const schema = createSchema({ type: String, format: [phoneRegex, msg] })
+      const schema = createSinglePropertySchemaa({ type: String, format: [phoneRegex, msg] })
 
       await runValidator(schema, 'potato', msg)
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: String, format: phoneRegex })
+      const schema = createSinglePropertySchemaa({ type: String, format: phoneRegex })
       await runValidator(schema, null, false)
     })
 
@@ -233,7 +233,7 @@ describe('Stock String Validators', () => {
 
     it('handles arrays', async () => {
       const values = ['895-1029', '019-1298', 'no phone', 'technology is for suckers', '891-1092s']
-      const schema = createSchema([{ type: String, format: [phoneRegex, 'Bad.'] }])
+      const schema = createSinglePropertySchemaa([{ type: String, format: [phoneRegex, 'Bad.'] }])
 
       await runValidator(schema, values, values.map( v => phoneRegex.test(v) ? false : 'Bad.'))
     })
@@ -246,7 +246,7 @@ describe('Stock String Validators', () => {
 
     it('fails if value isn\'t formatted as an email', async () => {
 
-      const schema = createSchema({ type: String, email: true })
+      const schema = createSinglePropertySchemaa({ type: String, email: true })
 
       for (let i = 0; i < values.length; i++) {
         const expected = results[i]
@@ -257,13 +257,13 @@ describe('Stock String Validators', () => {
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: String, email: true })
+      const schema = createSinglePropertySchemaa({ type: String, email: true })
       await runValidator(schema, null, false)
     })
 
     it('optionally takes a error message string', async () => {
       const msg = 'Enter an email only.'
-      const schema = createSchema({ type: String, email: msg })
+      const schema = createSinglePropertySchemaa({ type: String, email: msg })
 
       await runValidator(schema, 'potato', msg)
     })
@@ -277,7 +277,7 @@ describe('Stock String Validators', () => {
     })
 
     it('handles arrays', async () => {
-      const schema = createSchema([{ type: String, email: 'Bad.' }])
+      const schema = createSinglePropertySchemaa([{ type: String, email: 'Bad.' }])
 
       await runValidator(schema, values, results.map(result => result === PASS ? PASS : 'Bad.'))
     })
@@ -290,7 +290,7 @@ describe('Stock String Validators', () => {
 
     it('fails if value isn\'t alphanumeric', async () => {
 
-      const schema = createSchema({ type: String, alphanumeric: true })
+      const schema = createSinglePropertySchemaa({ type: String, alphanumeric: true })
 
 
       for (let i = 0; i < values.length; i++) {
@@ -303,13 +303,13 @@ describe('Stock String Validators', () => {
 
     it('optionally takes a error message string', async () => {
       const msg = 'If you put anything but letters or numbers I will straight up cut you.'
-      const schema = createSchema({ type: String, alphanumeric: msg })
+      const schema = createSinglePropertySchemaa({ type: String, alphanumeric: msg })
 
       await runValidator(schema, 'I <3 you!!!', msg)
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: String, alphanumeric: true })
+      const schema = createSinglePropertySchemaa({ type: String, alphanumeric: true })
       await runValidator(schema, null, false)
     })
 
@@ -322,7 +322,7 @@ describe('Stock String Validators', () => {
     })
 
     it('handles arrays', async () => {
-      const schema = createSchema([{ type: String, alphanumeric: 'Bad.' }])
+      const schema = createSinglePropertySchemaa([{ type: String, alphanumeric: 'Bad.' }])
 
       await runValidator(schema, values, results.map(result => result === PASS ? PASS : 'Bad.'))
     })
@@ -334,7 +334,7 @@ describe('Stock String Validators', () => {
 
     it('fails if value has spaces', async () => {
 
-      const schema = createSchema({ type: String, nospaces: true })
+      const schema = createSinglePropertySchemaa({ type: String, nospaces: true })
 
       for (let i = 0; i < values.length; i++) {
         const expected = results[i]
@@ -345,13 +345,13 @@ describe('Stock String Validators', () => {
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: String, nospaces: true })
+      const schema = createSinglePropertySchemaa({ type: String, nospaces: true })
       await runValidator(schema, null, false)
     })
 
     it('optionally takes a error message string', async () => {
       const msg = 'No spaces allowed, you wanna be hacker.'
-      const schema = createSchema({ type: String, nospaces: msg })
+      const schema = createSinglePropertySchemaa({ type: String, nospaces: msg })
 
       await runValidator(schema, 'I <3 you!!!', msg)
     })
@@ -365,7 +365,7 @@ describe('Stock String Validators', () => {
     })
 
     it('handles arrays', async () => {
-      const schema = createSchema([{ type: String, nospaces: 'Bad.' }])
+      const schema = createSinglePropertySchemaa([{ type: String, nospaces: 'Bad.' }])
 
       await runValidator(schema, values, results.map(result => result === PASS ? PASS : 'Bad.'))
     })
@@ -389,7 +389,7 @@ describe('Stock Number Validators', () => {
       for (let i = 0; i < tests.length; i++) {
 
         const test = tests[i]
-        const schema = createSchema({ type: Number, range: test })
+        const schema = createSinglePropertySchemaa({ type: Number, range: test })
 
         const expect = expects[i]
 
@@ -424,20 +424,20 @@ describe('Stock Number Validators', () => {
 
     it('optionally takes a error message string', async () => {
       const msg = '8 or less.'
-      const schema = createSchema({ type: Number, range: { value: 8, compare: '<=', msg } })
+      const schema = createSinglePropertySchemaa({ type: Number, range: { value: 8, compare: '<=', msg } })
 
       await runValidator(schema, 9, msg)
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: Number, range: { min: 2, max: 4, compare: '<=>' } })
+      const schema = createSinglePropertySchemaa({ type: Number, range: { min: 2, max: 4, compare: '<=>' } })
 
       await runValidator(schema, null, false)
     })
 
     it('handles arrays', async () => {
       const values = [1,2,3,4,5,6,7,8,9,10]
-      const schema = createSchema([{ type: Number, range: [0, 4, '<=>', 'Bad.'] }])
+      const schema = createSinglePropertySchemaa([{ type: Number, range: [0, 4, '<=>', 'Bad.'] }])
 
       await runValidator(schema, values, values.map(value => value <= 4 ? PASS : 'Bad.'))
     })
@@ -448,7 +448,7 @@ describe('Stock Number Validators', () => {
 
     it('throws an error if value is even', async () => {
 
-      const schema = createSchema({ type: Number, even: true})
+      const schema = createSinglePropertySchemaa({ type: Number, even: true})
       const values = [1,4,7,8,10,11,129,12371,123,101209]
 
       for (const value of values) {
@@ -467,21 +467,21 @@ describe('Stock Number Validators', () => {
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: Number, even: true })
+      const schema = createSinglePropertySchemaa({ type: Number, even: true })
 
       await runValidator(schema, null, false)
     })
 
     it('optionally takes a error message string', async () => {
       const msg = 'Make it an even number, you unfair fuck.'
-      const schema = createSchema({ type: Number, even: msg })
+      const schema = createSinglePropertySchemaa({ type: Number, even: msg })
 
       await runValidator(schema, 9, msg)
     })
 
     it('handles arrays', async () => {
       const values = [1,2,3,4,5,6,7,8,9,10]
-      const schema = createSchema([{ type: Number, even: 'Bad.' }])
+      const schema = createSinglePropertySchemaa([{ type: Number, even: 'Bad.' }])
 
       await runValidator(schema, values, values.map(value => value % 2 === 0 ? PASS : 'Bad.'))
     })
@@ -492,7 +492,7 @@ describe('Stock Number Validators', () => {
 
     it('throws an error if value is odd', async () => {
 
-      const schema = createSchema({ type: Number, odd: true})
+      const schema = createSinglePropertySchemaa({ type: Number, odd: true})
       const values = [1,4,7,8,10,11,129,12371,123,101209]
 
       for (const value of values) {
@@ -511,21 +511,21 @@ describe('Stock Number Validators', () => {
     })
 
     it('passes if input is null or undefined', async () => {
-      const schema = createSchema({ type: Number, odd: true })
+      const schema = createSinglePropertySchemaa({ type: Number, odd: true })
 
       await runValidator(schema, null, false)
     })
 
     it('optionally takes a error message string', async () => {
       const msg = 'Make it an odd number, you soccer mom.'
-      const schema = createSchema({ type: Number, odd: msg })
+      const schema = createSinglePropertySchemaa({ type: Number, odd: msg })
 
       await runValidator(schema, 10, msg)
     })
 
     it('handles arrays', async () => {
       const values = [1,2,3,4,5,6,7,8,9,10]
-      const schema = createSchema([{ type: Number, odd: 'Bad.' }])
+      const schema = createSinglePropertySchemaa([{ type: Number, odd: 'Bad.' }])
 
       await runValidator(schema, values, values.map(value => value % 2 === 1 ? PASS : 'Bad.'))
     })
