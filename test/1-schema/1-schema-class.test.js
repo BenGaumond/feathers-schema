@@ -1,11 +1,41 @@
-import { expect } from 'chai'
+import { expect, assert } from 'chai'
 import is from 'is-explicit'
 
-import { schemasShouldBeEquivalent } from '../helper'
-
-import Schema from '../../lib'
+import Schema from '../../src'
 
 /* global describe it */
+
+
+function compareProperties(a, b) {
+
+  assert.deepEqual(Object.keys(a), Object.keys(b), 'Property keys do not match.')
+
+  for (const property of a) {
+
+    const { key } = property
+
+    const ap = a[key], bp = b[key]
+
+    assert.equal(ap.type, bp.type)
+    assert.equal(ap.array, bp.array)
+
+    assert.equal(ap.validators.length, bp.validators.length)
+    for (let i = 0; i < ap.validators.length; i++)
+      assert.equal(ap.validators[i].toString(), bp.validators[i].toString())
+
+    assert.equal(ap.sanitizers.length, bp.sanitizers.length)
+    for (let i = 0; i < ap.sanitizers.length; i++)
+      assert.equal(ap.sanitizers[i].toString(), bp.sanitizers[i].toString())
+
+    assert.equal(!!ap.properties, !!bp.properties)
+
+    if (ap.properties)
+      compareProperties(ap.properties, bp.properties)
+
+  }
+
+
+}
 
 const NotPlainObjects = ['string', 129, [], new function(){}, Array, true, null, undefined]
 const Definition = {
@@ -59,7 +89,7 @@ describe('Schema Class', () => {
         expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
 
-  it.skip('Can be composed into other schemas', () => {
+  it('Can be composed into other schemas', () => {
 
     const authorSchema = new Schema({
       name: {
@@ -106,7 +136,7 @@ describe('Schema Class', () => {
 
     })
 
-    return schemasShouldBeEquivalent(articleSchema, uncomposedArticleSchema)
+    compareProperties(articleSchema.properties, uncomposedArticleSchema.properties)
 
   })
 

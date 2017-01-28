@@ -36,13 +36,17 @@ export default function populateWithSchema(schema) {
 
     const { method, type, id, data } = hook
 
-    if (method !== 'patch')
-      return next()
 
     try {
 
       if (type !== 'before')
-        throw new Error('populate-with-schema hook should only be used as a before hook.')
+        throw new Error('The \'populate-with-schema\' hook should only be used as a \'before\' hook.')
+
+      if (method === 'find' || method === 'get' || method === 'remove')
+        throw new Error('The \'populate-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.')
+
+      if (method !== 'patch')
+        return next()
 
       const service = this
 

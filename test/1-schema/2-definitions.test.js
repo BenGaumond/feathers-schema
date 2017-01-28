@@ -1,6 +1,6 @@
 
-import Schema, { types } from '../../lib'
-import { isPlainObject } from '../../lib/helper'
+import Schema, { types } from '../../src'
+import { isPlainObject } from '../../src/helper'
 import { assert  } from 'chai'
 import is from 'is-explicit'
 import ObjectId from 'bson-objectid'

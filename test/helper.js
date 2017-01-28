@@ -1,18 +1,18 @@
-import Schema from '../lib'
+import Schema from '../src'
 import { expect } from 'chai'
 
-export function createSinglePropertySchemaa(prop) {
+export function createSinglePropertySchema(prop) {
   return new Schema({ prop })
 }
 
 export function schemaShouldThrow(prop, error = Error) {
-  expect(() => createSinglePropertySchemaa(prop))
+  expect(() => createSinglePropertySchema(prop))
     .to
     .throw(error)
 }
 
 export function schemaShouldNotThrow(prop, error = Error) {
-  expect(() => createSinglePropertySchemaa(prop))
+  expect(() => createSinglePropertySchema(prop))
     .to
     .not
     .throw(error)

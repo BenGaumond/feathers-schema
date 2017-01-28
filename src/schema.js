@@ -130,7 +130,13 @@ class Property extends PropertyBase {
       definition = definition[0]
 
     //Determin type
-    if (ALL.includes(definition))
+    //schemas should be composable
+    if (is(definition, Schema)) {
+      this.type = Object
+      this.properties = definition.properties
+      return
+
+    } else if (ALL.includes(definition))
       definition = { type: definition }
 
     //pass empty Object in as Object type

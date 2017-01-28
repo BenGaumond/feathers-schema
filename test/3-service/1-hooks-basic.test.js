@@ -1,12 +1,12 @@
 
 import App from '../app'
 import memory from 'feathers-memory'
-import { assert } from 'chai'
+import { assert, expect } from 'chai'
 
 /* global describe it before after */
 //configure messages service
 
-import Schema from '../../lib'
+import Schema from '../../src'
 // import ObjectId from 'bson-objectid'
 
 const trim = true, alphanumeric = true, required = true
@@ -98,7 +98,48 @@ describe('Hooks', () => {
       assert.equal(authorError, 'Required.')
     })
 
-    it('Can only be used as a before update/patch or create hook.')
+    it('Can only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
+
+      const test = app.use('/test', memory())
+        .service('test')
+
+      const pop = [ messageSchema.hooks.populate ]
+      test.before({
+        find: pop,
+        get: pop,
+        remove: pop
+      })
+
+      test.after({
+        all: pop
+      })
+
+      const run = async (method, id, expected)=> {
+
+        const args = id instanceof Array ? id : [id]
+
+        let message = null
+        try {
+          await test[method].apply(test, args)
+        } catch (err) {
+          message = err.message
+        }
+
+        assert.equal(message, expected)
+
+      }
+
+      const BeforeErr = 'The \'populate-with-schema\' hook should only be used as a \'before\' hook.'
+      const MethodErr = 'The \'populate-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.'
+
+      await run('create', {}, BeforeErr)
+      await run('patch', [0, {}], BeforeErr)
+      await run('update', [0, {}], BeforeErr)
+      await run('find', {}, MethodErr)
+      await run('get', 0, MethodErr)
+      await run('remove', 0, MethodErr)
+
+    })
 
     after(async () => await app.end())
 
@@ -139,7 +180,48 @@ describe('Hooks', () => {
       })
     })
 
-    it('Can only be used as a before update/patch or create hook.')
+    it('Can only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
+
+      const test = app.use('/test', memory())
+        .service('test')
+
+      const san = [ messageSchema.hooks.sanitize ]
+      test.before({
+        find: san,
+        get: san,
+        remove: san
+      })
+
+      test.after({
+        all: san
+      })
+
+      const run = async (method, id, expected)=> {
+
+        const args = id instanceof Array ? id : [id]
+
+        let message = null
+        try {
+          await test[method].apply(test, args)
+        } catch (err) {
+          message = err.message
+        }
+
+        assert.equal(message, expected)
+
+      }
+
+      const BeforeErr = 'The \'sanitize-with-schema\' hook should only be used as a \'before\' hook.'
+      const MethodErr = 'The \'sanitize-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.'
+
+      await run('create', {}, BeforeErr)
+      await run('patch', [0, {}], BeforeErr)
+      await run('update', [0, {}], BeforeErr)
+      await run('find', {}, MethodErr)
+      await run('get', 0, MethodErr)
+      await run('remove', 0, MethodErr)
+
+    })
 
 
     after(async () => await app.end())
@@ -187,8 +269,48 @@ describe('Hooks', () => {
 
     })
 
-    it('Can only be used as a before update/patch or create hook.')
+    it('Can only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
 
+      const test = app.use('/test', memory())
+        .service('test')
+
+      const val = [ messageSchema.hooks.validate ]
+      test.before({
+        find: val,
+        get: val,
+        remove: val
+      })
+
+      test.after({
+        all: val
+      })
+
+      const run = async (method, id, expected)=> {
+
+        const args = id instanceof Array ? id : [id]
+
+        let message = null
+        try {
+          await test[method].apply(test, args)
+        } catch (err) {
+          message = err.message
+        }
+
+        assert.equal(message, expected)
+
+      }
+
+      const BeforeErr = 'The \'validate-with-schema\' hook should only be used as a \'before\' hook.'
+      const MethodErr = 'The \'validate-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.'
+
+      await run('create', {}, BeforeErr)
+      await run('patch', [0, {}], BeforeErr)
+      await run('update', [0, {}], BeforeErr)
+      await run('find', {}, MethodErr)
+      await run('get', 0, MethodErr)
+      await run('remove', 0, MethodErr)
+
+    })
 
     after(async () => await app.end())
 
