@@ -1,4 +1,5 @@
 import Schema from '../schema'
+import { array } from '../helper'
 import is from 'is-explicit'
 
 export default function populateWithSchema(schema) {
@@ -19,14 +20,26 @@ export default function populateWithSchema(schema) {
       if (method !== 'create' && method !== 'update' && method !== 'patch')
         throw new Error('The \'sanitize-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.')
 
-      //A set of params that sanitization functions can use to their benefit. Similar
-      //to the hook, with an added property for the current service. Also, sending
-      //this object prevents sanitization methods from mutating the hook object,
-      //respecting encapsulation.
-      const arg = { id, app, method, data: hook.data, service: this }
+      //account for bulk queries
+      const isBulk = is(hook.data, Array)
+      const asBulk = array(hook.data)
 
-      hook.data = await schema.sanitize(arg.data, arg)
+      for (let i = 0; i < asBulk.length; i++) {
 
+        const data = asBulk[i]
+
+        //A set of params that sanitization functions can use to their benefit. Similar
+        //to the hook, with an added property for the current service. Also, sending
+        //this object prevents sanitization methods from mutating the hook object,
+        //respecting encapsulation.
+        const arg = { id, app, method, data, service: this }
+
+        asBulk[i] = await schema.sanitize(arg.data, arg)
+
+      }
+
+      hook.data = array.unwrap(asBulk, !isBulk)
+        
       return next(null, hook)
 
     } catch (err) {

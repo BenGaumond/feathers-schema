@@ -1,6 +1,6 @@
 import Schema from '../schema'
 import is from 'is-explicit'
-import { isPlainObject } from '../helper'
+import { isPlainObject, array } from '../helper'
 
 function fillWithProperties(data = {}, fill = {},  properties) {
 
@@ -34,8 +34,7 @@ export default function populateWithSchema(schema) {
 
   return async function(hook, next) {
 
-    const { method, type, id, data } = hook
-
+    const { method, type, data } = hook
 
     try {
 
@@ -50,9 +49,26 @@ export default function populateWithSchema(schema) {
 
       const service = this
 
-      const doc = await service.get(id)
+      //acount for bulk queries
+      const isBulk = is(data, Array)
+      const asBulk = array(data)
 
-      hook.data = fillWithProperties(data, doc, schema.properties)
+      for (let i = 0; i < asBulk.length; i++) {
+
+        const data = asBulk[i]
+
+        //If this is a bulk request, hook.id will be null, and the required id will be
+        //in the patch data. If not, it will through a 'no record for undefined' error
+        //as it should
+        const id = isBulk ? data[service.id] : hook.id
+
+        const doc = await service.get(id)
+
+        asBulk[i] = fillWithProperties(data, doc, schema.properties)
+
+      }
+
+      hook.data = array.unwrap(asBulk, !isBulk)
 
       next(null, hook)
 

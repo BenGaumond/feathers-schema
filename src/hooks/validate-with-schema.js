@@ -1,5 +1,6 @@
 import Schema from '../schema'
 import is from 'is-explicit'
+import { array } from '../helper'
 import { BadRequest } from 'feathers-errors'
 
 export default function populateWithSchema(schema) {
@@ -14,7 +15,6 @@ export default function populateWithSchema(schema) {
     const { type, method, id, app, params } = hook
 
     //Ensure hook can run
-
     if (type !== 'before')
       throw new Error('The \'validate-with-schema\' hook should only be used as a \'before\' hook.')
 
@@ -28,17 +28,38 @@ export default function populateWithSchema(schema) {
     if (skipValidation && (!provider || options.canSkipValidation(user)))
       return
 
-    //A set of params that validation functions can use to their benefit. Similar
-    //to the hook, with an added property for the current service. Also, sending
-    //this object prevents validation methods from mutating the hook object,
-    //respecting encapsulation.
-    const arg = { id, app, method, data: hook.data, service: this }
+    //acount for bulk queries
+    const isBulk = is(hook.data, Array)
+    const asBulk = array(hook.data)
+    let errors = null
 
-    const errors = await schema.validate(arg.data, arg)
+    for (let i = 0; i < asBulk.length; i++) {
+      const data = asBulk[i]
 
-    //errors will be an object if validation failed. If so, wrap it in a BadRequest
-    if (errors)
+      //A set of params that validation functions can use to their benefit. Similar
+      //to the hook, with an added property for the current service. Also, sending
+      //this object prevents validation methods from mutating the hook object,
+      //respecting encapsulation.
+      const arg = { id, app, method, data, service: this }
+
+      const result = await schema.validate(arg.data, arg)
+      if (!result)
+        continue
+
+      errors = errors || []
+      errors[i] = result
+
+    }
+
+    //errors will be an array if validation failed. If so, wrap it in a BadRequest
+    if (errors) {
+      //results that didn't fail should be cast to false
+      errors = errors.map(result => result === undefined ? false : result)
+      //should only be an array if this is a bulk request
+      errors = array.unwrap(errors, !isBulk)
+
       throw new BadRequest('Validation failed.', { errors })
+    }
 
   }
 

@@ -1,7 +1,7 @@
 
 import App from '../app'
 import memory from 'feathers-memory'
-import { assert, expect } from 'chai'
+import { assert } from 'chai'
 
 /* global describe it before after */
 //configure messages service
@@ -98,7 +98,7 @@ describe('Hooks', () => {
       assert.equal(authorError, 'Required.')
     })
 
-    it('Can only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
+    it('May only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
 
       const test = app.use('/test', memory())
         .service('test')
@@ -180,7 +180,7 @@ describe('Hooks', () => {
       })
     })
 
-    it('Can only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
+    it('May only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
 
       const test = app.use('/test', memory())
         .service('test')
@@ -223,13 +223,11 @@ describe('Hooks', () => {
 
     })
 
-
     after(async () => await app.end())
 
   })
 
   describe('Vaidate hook', () => {
-
 
     before(async () => {
 
@@ -239,10 +237,9 @@ describe('Hooks', () => {
       await app.start()
 
       messages.before({
-        create:[
-          messageSchema.hooks.sanitize,
-          messageSchema.hooks.validate
-        ]
+        create: [ ...messageSchema.hooks ],
+        patch: [ ...messageSchema.hooks ],
+        update: [ ...messageSchema.hooks ]
       })
 
     })
@@ -269,7 +266,7 @@ describe('Hooks', () => {
 
     })
 
-    it('Can only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
+    it('May only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
 
       const test = app.use('/test', memory())
         .service('test')
@@ -316,4 +313,55 @@ describe('Hooks', () => {
 
   })
 
+
+  describe('Bulk Queries', () => {
+
+    before(async () => {
+
+      app = new App()
+      app.use('/messages', memory())
+      messages = app.service('messages')
+      await app.start()
+
+      messages.before({
+        create: [ ...messageSchema.hooks ],
+        patch: [ ...messageSchema.hooks ],
+        update: [ ...messageSchema.hooks ]
+      })
+
+    })
+
+    it('All Hooks can handle bulk \'create\' and \'patch\' queries. ', async () => {
+
+      let errors
+      let results
+
+      const createData = Array.from({length: 20}, (v,i) => Object({ body: `Message ${i}`, author: `Author${i}`, scores: [0] }))
+
+      try {
+        results = await messages.create(createData)
+      } catch (err) {
+        errors = err
+      }
+
+      if (errors && errors.message)
+        throw errors.message
+
+      errors = null
+      const patchData = results.map(data => Object({id: data.id, body: '[Redacted]'}))
+
+      try {
+        results = await messages.patch(null, patchData)
+      } catch (err) {
+        errors = err
+      }
+
+      if (errors && errors.message)
+        throw errors.message
+
+    })
+
+    after(async () => await app.end())
+
+  })
 })

@@ -5,7 +5,6 @@ import Schema from '../../src'
 
 /* global describe it */
 
-
 function compareProperties(a, b) {
 
   assert.deepEqual(Object.keys(a), Object.keys(b), 'Property keys do not match.')
