@@ -25,7 +25,7 @@ const spreadable = {
 }
 
 /******************************************************************************/
-// Data
+// Constants and Symbols
 /******************************************************************************/
 
 const DEFAULT_OPTIONS = {
@@ -38,6 +38,8 @@ const RESERVED_PROPERTY_KEYS = [
   ...fixKeys(sanitizers),
   ...fixKeys(validators)
 ]
+
+const DEFINITION = Symbol('definition')
 
 /******************************************************************************/
 // PropertyBase
@@ -64,7 +66,7 @@ class PropertyBase {
 }
 
 /******************************************************************************/
-// Property Class
+// Property Class Private Danglers
 /******************************************************************************/
 
 function addCustom(defs, key, arr) {
@@ -111,8 +113,76 @@ function addStock(def, stock, arr) {
   }
 }
 
+//Why copy a definition?
+//If a schema is nested, it's properties will be rebuilt into the parent
+//schema using their definitions. It's important
+function copyDefinition(definition) {
+
+  if (!isPlainObject(definition))
+    return definition
+
+  const copy = { }
+
+  for (const key in definition) {
+    const value = definition[key]
+
+    copy[key] = is(value, Array)
+       ? value.map(v => copyDefinition(v))
+
+       : copyDefinition(value)
+  }
+
+  return copy
+}
+
+function applyDefinition(definition) {
+
+  this[DEFINITION] = definition
+
+  const mutableDefinition = copyDefinition(definition)
+
+  addStock.call(this, mutableDefinition, validators, this.validators)
+  addCustom.call(this, mutableDefinition, 'validates', this.validators)
+  addCustom.call(this, mutableDefinition, 'validate', this.validators)
+
+  //get stock and custom sanitizer
+  addStock.call(this, mutableDefinition, sanitizers, this.sanitizers)
+  addCustom.call(this, mutableDefinition, 'sanitizes', this.sanitizers)
+  addCustom.call(this, mutableDefinition, 'sanitize', this.sanitizers)
+
+  //Determin sub properties
+  const subProperties = { }
+
+  for (const key in mutableDefinition)
+    if (!RESERVED_PROPERTY_KEYS.includes(key))
+      subProperties[key] = mutableDefinition[key]
+
+  if (Object.keys(subProperties).length === 0)
+    return
+
+  for (const key in subProperties)
+    this.addProperty(subProperties[key], fixKey(key))
+
+  //we store the definition property so that it can be used when composing schemas
+}
+
+function applyNestedSchema(schema) {
+
+  this.type = Object
+  this[DEFINITION] = schema
+
+  for(const property of schema.properties)
+    this.addProperty(property[DEFINITION], property.key)
+
+}
+
+/******************************************************************************/
+// Property Class
+/******************************************************************************/
+
 class Property extends PropertyBase {
 
+  // the constructor of a property parses the definition for that property
   constructor(definition, key) {
     super()
 
@@ -131,12 +201,10 @@ class Property extends PropertyBase {
 
     //Determin type
     //schemas should be composable
-    if (is(definition, Schema)) {
-      this.type = Object
-      this.properties = definition.properties
-      return
+    if (is(definition, Schema))
+      return applyNestedSchema.call(this, definition)
 
-    } else if (ALL.includes(definition))
+    else if (ALL.includes(definition))
       definition = { type: definition }
 
     //pass empty Object in as Object type
@@ -150,26 +218,7 @@ class Property extends PropertyBase {
     if (!ALL.includes(this.type))
       throw new Error(`Malformed property: ${this.type} is not a valid type.`)
 
-    //get stock and custom validators
-    addStock.call(this, definition, validators, this.validators)
-    addCustom.call(this, definition, 'validates', this.validators)
-    addCustom.call(this, definition, 'validate', this.validators)
-
-    //get stock and custom sanitizer
-    addStock.call(this, definition, sanitizers, this.sanitizers)
-    addCustom.call(this, definition, 'sanitizes', this.sanitizers)
-    addCustom.call(this, definition, 'sanitize', this.sanitizers)
-
-    //Determin sub properties
-    RESERVED_PROPERTY_KEYS.forEach(key => delete definition[key])
-
-    const hasSubProperties = Object.keys(definition).length > 0
-    if (!hasSubProperties)
-      return
-
-    for (const key in definition)
-      this.addProperty(definition[key], fixKey(key))
-
+    applyDefinition.call(this, definition)
   }
 
   addProperty(definition, key) {
@@ -360,6 +409,7 @@ export default class Schema extends PropertyBase {
     let errors = false
 
     for (const property of this.properties) {
+
       const { key } = property
 
       const result = await property.validate(data[key], params)

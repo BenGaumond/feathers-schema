@@ -77,8 +77,8 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
   const explicitlyDefined = isPlainObject(configArgs[0])
   const isMax = is(max, Number)
   const isMin = is(min, Number)
-  const isBetween = compare === '<=>'
   const isValue = is(value, Number)
+  const isBetween = compare === '<=>'
 
   if (explicitlyDefined && isBetween && isValue && !isMin && !isMax)
     throw new Error('Cannot just provide a value to compare a range.')

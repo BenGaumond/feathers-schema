@@ -16,6 +16,7 @@ function compareProperties(a, b) {
     const ap = a[key], bp = b[key]
 
     assert.equal(ap.type, bp.type)
+
     assert.equal(ap.array, bp.array)
 
     assert.equal(ap.validators.length, bp.validators.length)
@@ -33,13 +34,10 @@ function compareProperties(a, b) {
 
   }
 
-
 }
 
 const NotPlainObjects = ['string', 129, [], new function(){}, Array, true, null, undefined]
-const Definition = {
-  description: String
-}
+const Definition = { description: String }
 
 describe('Schema Class', () => {
 
@@ -88,7 +86,7 @@ describe('Schema Class', () => {
         expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
 
-  it('Can be composed into other schemas', () => {
+  it.only('Can be composed into other schemas', () => {
 
     const authorSchema = new Schema({
       name: {
