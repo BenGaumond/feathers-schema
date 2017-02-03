@@ -11,6 +11,7 @@ ___
   - You'd also like to validate this data using a variety of database adapters with the same syntax.
   - You'd like to validate data client-side using the same schemas that you create to validate serverside, because you understand the benefits of isomorphism.
   - You're one of those cools we keep hearing about.
+  
 ___
 
 # QuickStart
