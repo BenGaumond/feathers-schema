@@ -37,9 +37,9 @@ const articleSchema = new Schema({
 ```
 **Hmm... Looks a lot like writing schemas for Mongoose.**
 
-Quite right. Mongoose has an intuitive and reliable syntax for creating schemas
-that I shamelessly ripped off while creating this package. If you're familiar with
-mongoose, feathers-schema will be easy mode.
+Quite right. Mongoose has an intuitive syntax for creating schemas that I shamelessly
+ripped off while creating this package. If you're familiar with mongoose, feathers-schema
+will be easy mode.
 
 **Then why not just use Mongoose? Mongoose works with feathers.**
 
@@ -150,7 +150,7 @@ new Schema({
 })
 
 ```
-Shortcut:
+If you only need to define a type, and no other attributes:
 ```js
 new Schema({
   property: String
@@ -158,8 +158,8 @@ new Schema({
 
 ```
 
-You can also define weather the property is intended to be
-an array of items or not, by wrapping the rest of the definition in an array:
+You can also define weather the property is intended to be an array of items by
+wrapping the rest of the definition in an array:
 ```js
 new Schema({
   property: [String]
