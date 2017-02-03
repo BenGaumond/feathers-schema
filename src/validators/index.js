@@ -1,9 +1,8 @@
-import { required, _enum } from './general'
+import { required, unique, _enum } from './general'
 
-import { length, format, email, nospaces, alphanumeric } from './string'
+import { length, format, email, nospaces, alphanumeric, alpha, numeric } from './string'
 
 import { range, even, odd } from './number'
 
-export { required, _enum,
-  length, format, email, nospaces, alphanumeric,
-  range, even, odd }
+export { required, unique, _enum,
+  length, format, email, nospaces, alphanumeric, alpha, numeric, range, even, odd }

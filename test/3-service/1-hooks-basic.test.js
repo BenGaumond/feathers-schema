@@ -36,7 +36,6 @@ const messageSchema = new Schema({
 
 })
 
-
 describe('Hooks', () => {
 
   let id, app, messages

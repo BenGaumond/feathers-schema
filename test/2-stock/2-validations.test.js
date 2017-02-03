@@ -26,6 +26,20 @@ const PASS = false, FAIL = true
 
 describe('Stock General Validators', () => {
 
+  describe('unique validator', () => {
+
+    it('should always pass without a params object', async () => {
+
+      const schema = createSinglePropertySchema({ type: String, unique: true })
+      const values = ['whatever', null, 'string', undefined]
+
+      for (const value of values)
+        await runValidator(schema, value, PASS)
+
+    })
+
+  })
+
   describe('required validator', () => {
 
     it('fails if input is null or undefined', async () => {
@@ -173,10 +187,20 @@ describe('Stock String Validators', () => {
 
 
     it('optionally takes a error message string', async () => {
-      const msg = '8 or less characters, please.'
-      const schema = createSinglePropertySchema({ type: String, length: { value: 8, compare: '<=', msg } })
+      let msg = '8 or less characters, please.'
+      let schema = createSinglePropertySchema({ type: String, length: { value: 8, compare: '<=', msg } })
 
       await runValidator(schema, 'tattoos-are-rad', msg)
+
+      msg = 'Between 0 and 10, moron.'
+      schema = createSinglePropertySchema({ type: String, length: [0, 10, msg] })
+
+      await runValidator(schema, 'i am so smart! smrt! smrt', msg)
+
+      msg = 'Not long enough.'
+      schema = createSinglePropertySchema({ type: String, length: [msg, '>=', 100] })
+      await runValidator(schema, 'some string', msg)
+
     })
 
     it('passes if input is null or undefined', async () => {

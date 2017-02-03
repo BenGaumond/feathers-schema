@@ -11,11 +11,12 @@ import is from 'is-explicit'
 // Helpers
 /******************************************************************************/
 
-const fixKey = key => key.replace(/_|@/g, '')
+const fixKeyUnderscore = key => key.replace(/_/g, '')
+const fixKeyAtSymbol = key => key.replace(/@/g, '')
 
-const fixKeys = obj => Object
+const fixKeysUnderscore = obj => Object
   .keys(obj)
-  .map(fixKey)
+  .map(fixKeyUnderscore)
 
 const spreadable = {
   *[Symbol.iterator]() {
@@ -33,13 +34,14 @@ const DEFAULT_OPTIONS = {
   canSkipValidation: () => false
 }
 
-const RESERVED_PROPERTY_KEYS = [
+const RESERVED_PROPERTY_KEYS = Object.freeze([
   'type', 'validates', 'validate', 'sanitize', 'sanitizes',
-  ...fixKeys(sanitizers),
-  ...fixKeys(validators)
-]
+  ...fixKeysUnderscore(sanitizers),
+  ...fixKeysUnderscore(validators)
+])
 
 const DEFINITION = Symbol('definition')
+const PARENT = Symbol('parent')
 
 /******************************************************************************/
 // PropertyBase
@@ -50,14 +52,12 @@ class PropertyBase {
   addProperty(definition, key, Type = this.constructor) {
 
     if (!isPlainObject(this.properties))
-      this.properties = {
-        ...spreadable
-      }
+      this.properties = { ...spreadable }
 
     if (key in this.properties)
-      throw new Error('Property already exists.')
+      throw new Error(`Property already exists: ${key}`)
 
-    this.properties[key] = new Type(definition, key)
+    return this.properties[key] = new Type(definition, key, this)
 
   }
 
@@ -75,14 +75,12 @@ function addCustom(defs, key, arr) {
     return
 
   const def = defs[key]
-
   const factories = array(def)
+
   for (const factory of factories) {
     try {
-      const result = factory.call(this, def)
 
-      //TODO this doesn't work. Factories may well throw valid errors in the event
-      //of a type mismatch, or something.
+      const result = factory.call(this, def)
 
       //We're expecting custom validators to be a function factory.
       //However, if they don't return a function, we'll assume that the
@@ -93,8 +91,9 @@ function addCustom(defs, key, arr) {
 
     } catch (err) {
 
-      //if the factory call fails for any reason, we'll also assume it's a custom validator
-      arr.push(factory)
+      err.message = `Adding custom validator failed: ${err.message}`
+      throw err
+
     }
   }
 }
@@ -103,7 +102,7 @@ function addStock(def, stock, arr) {
   for (const stockkey in stock) {
 
     //remove underscores from stock keys, such as in _default
-    const key = fixKey(stockkey)
+    const key = fixKeyUnderscore(stockkey)
 
     if (key in def) {
       const factory = stock[stockkey]
@@ -161,7 +160,9 @@ function applyDefinition(definition) {
     return
 
   for (const key in subProperties)
-    this.addProperty(subProperties[key], fixKey(key))
+    //the fixKeyAtSymbol() is important here, because it allows the use of reserved property
+    //keys as property names. eg: { '@type': "value" } becomes { type: "value"}
+    this.addProperty(subProperties[key], fixKeyAtSymbol(key))
 
   //we store the definition property so that it can be used when composing schemas
 }
@@ -183,10 +184,11 @@ function applyNestedSchema(schema) {
 class Property extends PropertyBase {
 
   // the constructor of a property parses the definition for that property
-  constructor(definition, key) {
+  constructor(definition, key, parent) {
     super()
 
     this.key = key
+    this[PARENT] = parent
 
     //Determine if array
     this.array = is(definition, Array)
@@ -225,7 +227,7 @@ class Property extends PropertyBase {
     if (this.type !== Object)
       throw new Error('Cannot nest properties inside of a property that isn\'t a plain object.')
 
-    super.addProperty(definition, key)
+    return super.addProperty(definition, key)
 
   }
 
@@ -309,7 +311,7 @@ class Property extends PropertyBase {
 
       }
 
-      result[i] = result
+      results[i] = result
     }
 
     return this.array
@@ -330,11 +332,19 @@ class Property extends PropertyBase {
 
   validators = []
 
+  get parent() {
+    return this[PARENT]
+  }
+
+  [PARENT] = null
+
 }
 
 /******************************************************************************/
 // Export Schema
 /******************************************************************************/
+
+export const RESERVED_PROPERTY_KEYS
 
 export default class Schema extends PropertyBase {
 
@@ -343,12 +353,14 @@ export default class Schema extends PropertyBase {
 
     //Check options
     if (is(options) && !isPlainObject(options))
-      throw new Error('options, if supplied, is expected to be a plain object.')
+      throw new Error('options, if supplied, are expected to be a plain object.')
 
     this.options = { ...DEFAULT_OPTIONS, ...(options || {})}
 
-    if (is(this.options.canSkipValidation, Boolean))
-      this.options.canSkipValidation = () => this.options.canSkipValidation
+    if (is(this.options.canSkipValidation, Boolean)) {
+      const canSkip = this.options.canSkipValidation
+      this.options.canSkipValidation = () => canSkip
+    }
 
     if (!is(this.options.canSkipValidation, Function))
       throw new Error('Schema options.canSkipValidation is expected to be a boolean or a predicate function.')
@@ -358,7 +370,9 @@ export default class Schema extends PropertyBase {
       throw new Error('A schema must be created with a plain definitions object.')
 
     for (const key in definitions)
-      this.addProperty(definitions[key], fixKey(key))
+      //the fixKeyAtSymbol() is important here, because it allows the use of reserved property
+      //keys as property names. eg: { '@type': "value" } becomes { type: "value"}
+      this.addProperty(definitions[key], fixKeyAtSymbol(key))
 
     if (this.properties === null)
       throw new Error('Schema was created with no properties.')

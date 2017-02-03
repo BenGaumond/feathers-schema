@@ -17,8 +17,8 @@ const DEFAULT_TYPES = freeze([
   Boolean,
   Date,
   Buffer,
-  Object,
   ObjectId,
+  Object,
   ANY
 ])
 
@@ -100,7 +100,7 @@ resetToDefault()
 
 export default ALL
 
-export { ALL, ANY }
+export { ALL, ANY, ObjectId, Buffer }
 
 export function setCustom(type, method) {
 

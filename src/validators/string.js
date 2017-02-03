@@ -24,8 +24,8 @@ export function format(...config) {
 
   assert(this.type, String)
 
-  const { regEx, msg } = parseConfig(config, {
-    regEx: { type: RegExp, required: true },
+  const { exp, msg } = parseConfig(config, {
+    exp: { type: RegExp, required: true },
     msg: { type: String, default: 'Invalid format.' }
   })
 
@@ -35,7 +35,7 @@ export function format(...config) {
       return PASS
 
     const results = array(input)
-      .map(item => regEx.test(item) ? PASS : msg)
+      .map(item => exp.test(item) ? PASS : msg)
 
     return array
       .unwrap(
@@ -45,7 +45,7 @@ export function format(...config) {
   }
 }
 
-const EMAIL_REGEX =
+const EMAIL_EXP =
   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 export function email(...config) {
 
@@ -54,12 +54,12 @@ export function email(...config) {
   })
 
   return format.call(this, {
-    regEx: EMAIL_REGEX,
+    exp: EMAIL_EXP,
     msg
   })
 }
 
-const ALPHA_NUMERIC_REGEX = /^\w+$/
+const ALPHA_NUMERIC_EXP = /^\w+$/
 export function alphanumeric(...config) {
 
   const { msg } = parseConfig(config, {
@@ -67,12 +67,38 @@ export function alphanumeric(...config) {
   })
 
   return format.call(this, {
-    regEx: ALPHA_NUMERIC_REGEX,
+    exp: ALPHA_NUMERIC_EXP,
     msg
   })
 }
 
-const NO_SPACES_REGEX = /^\S*$/
+const ALPHA_EXP = /^[A-z]+$/
+export function alpha(...config) {
+
+  const { msg } = parseConfig(config, {
+    msg: { type: String, default: 'May only contain letters.'}
+  })
+
+  return format.call(this, {
+    exp: ALPHA_EXP,
+    msg
+  })
+}
+
+const NUMERIC_EXP = /^[0-9]+$/
+export function numeric(...config) {
+
+  const { msg } = parseConfig(config, {
+    msg: { type: String, default: 'May only contain numbers.'}
+  })
+
+  return format.call(this, {
+    exp: NUMERIC_EXP,
+    msg
+  })
+}
+
+const NO_SPACES_EXP = /^\S*$/
 export function nospaces(...config) {
 
   const { msg } = parseConfig(config, {
@@ -80,7 +106,7 @@ export function nospaces(...config) {
   })
 
   return format.call(this, {
-    regEx: NO_SPACES_REGEX,
+    exp: NO_SPACES_EXP,
     msg
   })
 }

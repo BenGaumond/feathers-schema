@@ -51,6 +51,8 @@ const DEFAULT_MSGS = {
 }
 
 const DEFAULT_GET_VALUE = input => input
+
+const COMPARERS = [ '<=', '<', '>', '>=', '<=>']
 /******************************************************************************/
 // EXPORTS
 /******************************************************************************/
@@ -70,7 +72,7 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
     min: Number,
     max: Number,
     value: Number,
-    compare: { type: String, default: '<=>' },
+    compare: String,
     msg: String
   })
 
@@ -78,6 +80,19 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
   const isMax = is(max, Number)
   const isMin = is(min, Number)
   const isValue = is(value, Number)
+  const isCompareDefined = is(compare)
+  const isCompareValid = COMPARERS.includes(compare)
+  // const isMsgDefined = is(msg)
+  const isMsgACompareValue = COMPARERS.includes(msg)
+
+  //set default compare value, and sort msg/compare mixups
+  if (!explicitlyDefined && isCompareDefined && !isCompareValid)
+    [msg, compare] = [compare, isMsgACompareValue ? msg : '<=>']
+    
+  else if (!isCompareDefined)
+    compare = '<=>'
+
+  //check to make sure everything makes sense
   const isBetween = compare === '<=>'
 
   if (explicitlyDefined && isBetween && isValue && !isMin && !isMax)
@@ -146,6 +161,6 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
     return factory(getValue, value => value >= min && value <= max, msgFunc(min, max))
 
   default:
-    throw new Error('Invalid compare value. Must be one of: <=, <, >, >=, <=>')
+    throw new Error(`Invalid compare value. Must be one of: ${COMPARERS}`)
   }
 }

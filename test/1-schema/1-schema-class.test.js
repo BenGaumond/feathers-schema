@@ -16,7 +16,6 @@ function compareProperties(a, b) {
     const ap = a[key], bp = b[key]
 
     assert.equal(ap.type, bp.type)
-
     assert.equal(ap.array, bp.array)
 
     assert.equal(ap.validators.length, bp.validators.length)
@@ -61,7 +60,7 @@ describe('Schema Class', () => {
 
     expect(() => schema.addProperty(Definition, 'description'))
       .to
-      .throw('Property already exists.')
+      .throw('Property already exists: description')
 
   })
 
@@ -86,7 +85,7 @@ describe('Schema Class', () => {
         expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
 
-  it.only('Can be composed into other schemas', () => {
+  it('Can be composed into other schemas', () => {
 
     const authorSchema = new Schema({
       name: {

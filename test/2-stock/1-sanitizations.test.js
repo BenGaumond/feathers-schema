@@ -166,6 +166,7 @@ describe('Stock String Sanitizers', () => {
       return schemaShouldNotThrow({type: String, trim: true})
     })
 
+
     it('handles arrays', async () => {
       const schema = createSinglePropertySchema([{
         type: String,
