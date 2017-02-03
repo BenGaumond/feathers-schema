@@ -1,5 +1,4 @@
 # Feathers Schema
-___
 
 # DOCUMENTATION INCOMPLETE
 If you're reading this, it's because you came to the github page while I'm still in the process of finalizing the alpha stage of feathers-schema and in the midst of writing the documentation.
@@ -13,7 +12,8 @@ ___
   - You'd like to validate data client-side using the same schemas that you create to validate serverside, because you understand the benefits of isomorphism.
   - You're one of those cools we keep hearing about.
 ___
-## QuickStart
+
+# QuickStart
 
 The following assumes you're familiar with feathers.js workflow. If you've never heard of feathers.js before, it's great. Learn it: [feathers.js](http://www.feathersjs.com)
 
@@ -139,7 +139,8 @@ And sanitize it as well:
   }
 ```
 ____
-## Attributes
+
+# Attributes
 
 The most basic attribute a property can have is it's type:
 ```js
@@ -341,8 +342,8 @@ Configuration: * = required
 
 const type = Number
 new Schema({
-  bestOfCount: { type, odd: true } //
-
+  bestOfRounds: { type, odd: true },
+  totalShoes: { type, even: true }
 })
 
 
