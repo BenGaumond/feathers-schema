@@ -11,14 +11,14 @@ ___
   - You'd also like to validate this data using a variety of database adapters with the same syntax.
   - You'd like to validate data client-side using the same schemas that you create to validate serverside, because you understand the benefits of isomorphism.
   - You're one of those cools we keep hearing about.
-  
+
 ___
 
 # QuickStart
 
 The following assumes you're familiar with feathers.js workflow. If you've never heard of feathers.js before, it's great. Learn it: [feathers.js](http://www.feathersjs.com)
 
-### Define a Schema
+## Define a Schema
 
 ```js
 import Schema from 'feathers-schema'
@@ -50,7 +50,7 @@ The scope of this tool is much more limited than Mongoose. You cannot create doc
 
 Feathers.js focuses on being loose, agnostic, and lightweight. This tool is simply an extension of that mindset.
 
-### Use in a Service
+## Use in a Service
 
 Lets create an app with the minimum functionality required to test a service:
 ```js
@@ -179,7 +179,7 @@ A Schema can be composed of properties of the following types:
 Without any further attributes, properties are nullable by default. That is, a missing or invalid property will be stored in the database as ```null```.
 
 
-### Attribute Signatures
+## Attribute Signatures
 
 Some attributes can be configured with a number of options, some attributes
 are enabled simply by being a key.
@@ -198,11 +198,11 @@ new Schema({
 })
 ```
 
-### String Attributes
+## String Attributes
 
 Using feathers-schema, blank strings are converted to ```null```.
 
-#### length
+### length
 
 The length attribute validates the length of a string.
 ```js
@@ -237,7 +237,7 @@ new Schema({
 
 ```
 
-#### format, email, alpha, numeric, alphanumeric and nospaces
+### format, email, alpha, numeric, alphanumeric and nospaces
 
 The format attribute will validate a string against a regular expression. It will
 throw an error if an input value does not pass the regular expression test() method.
@@ -274,7 +274,7 @@ const schema = new Schema({
 
 ```
 
-#### lowercase, uppercase and trim
+### lowercase, uppercase and trim
 
 These attributes sanitize a string property.
 ```js
@@ -302,7 +302,7 @@ schema.sanitize({
 //}
 ```
 
-### Number Attributes
+## Number Attributes
 
 ### range
 The range attribute validates the range of a number.
@@ -350,11 +350,11 @@ new Schema({
 
 ```
 
-### General Attributes
+## General Attributes
 
 General attributes can be applied to a many (or all) types.
 
-#### default
+### default
 
 The default attribute can be placed on any type. It will sanitize undefined
 values as the provided default.
@@ -364,7 +364,7 @@ new Schema({
 })
 ```
 
-#### required
+### required
 
 The required attribute can be placed on any type. It will return an error to
 any value that is null or undefined.
