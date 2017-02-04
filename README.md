@@ -1,10 +1,7 @@
 # Feathers Schema
 
-# DOCUMENTATION INCOMPLETE
-If you're reading this, it's because you came to the github page while I'm still in the process of finalizing the alpha stage of feathers-schema and in the midst of writing the documentation.
-
-The following may stop abruptly, be inaccurate, or not make any sense at all.
-
+# ALPHA VERSION DOCUMENTATION
+If you're reading this, feathers-schema is in alpha, and not all of the functionality is fully described or finalized.
 ___
 ## Why?
   - You're using feathers.js serverside, and you'd like to validate data.
@@ -141,7 +138,7 @@ And sanitize it as well:
 ```
 ____
 
-# Attributes
+# Types
 
 The most basic attribute a property can have is it's type:
 ```js
@@ -178,8 +175,94 @@ A Schema can be composed of properties of the following types:
 
 Without any further attributes, properties are nullable by default. That is, a missing or invalid property will be stored in the database as ```null```.
 
+## ```Object``` type
 
-## Attribute Signatures
+Type ```Object``` does not mean _any_ object. It specifically means plain key-value
+objects. If you are creating a nested property, it will default to ```Object```.
+
+```js
+
+new Schema({
+  //Objects types with no sub properties may have any structure, and will not
+  //be validated further.
+  metadata_v1: Object, // { whatever: ['you want'], is: ['fine']} √
+  metadata_v2: {},     //
+
+  //However, it can only be placed in an array if the property is defined as
+  //an array
+  metadata_v3: [Object], //[{cool: true}, {beans: true}] √
+  metadata_v4: [{}],
+
+  //Object types with at least one nested property will be limited in structure
+  //to those properties:
+  name: {
+    first: String,
+    last: String
+  } // { first: 'Jim', last: 'Beam', isABottleOfWhiskey: true } <-- last key will
+  //be filtered by type sanitizer
+})
+
+```
+
+## ```ANY``` type
+
+The ```ANY``` type means _almost_ any type. Like ```Object``` type, it needs to be defined
+as an array property if it's intended to be able to take arrays.
+
+```js
+import { ANY } from 'feathers-schema/types'
+
+
+new Schema({
+  whatever_v1: ANY,
+  whatever_v2: null, // ANY === null, literally
+
+  whatever_v3: undefined, // throws error. Must be null
+
+  whatever_array_v1: [],
+  whatever_array_v2: [ANY]
+})
+```
+
+ANY type is of course the most malleable. Strings, numbers, Objects, whatever. It
+also has the least number of attributes that apply to it, and cannot validate
+nested properties.
+___
+
+# Sanitization vs Validation
+
+Some attributes will sanitize a value, and some will validate a value.
+
+A schema has methods that can be called by client code or server hooks,
+that handle each:
+
+```js
+  const schema = new Schema({
+    name: {
+      type: String, /// type is a validator attribute
+      trim: true    /// trim is a sanitizer attribute
+    }
+  })
+
+  //Sanitizers take data and output sanitized data
+  schema.sanitize({ name: '  whitespace mcgee  '})
+    .then(data => console.log(data)) // { name: 'whitespace mcgee' }
+
+  //Validators take data and output errors
+  schema.validate({ name: 1000 })
+    .then(result => console.log(result)) // { name: 'Expected String.'}
+
+  //If there are no errors, schema.validate will return false
+  schema.validate({ name: 'whitespace mcgee'})
+    .then(result => console.log(result)) // false
+```
+
+Sanitization should happen before validation.
+___
+
+# Attributes
+
+## Attribute signatures
 
 Some attributes can be configured with a number of options, some attributes
 are enabled simply by being a key.
@@ -192,19 +275,19 @@ new Schema({
   //with some other config value, expected to be a string
   prop1: { attribute: 'Error Message.' },
   //both, implicitly in an array
-  prop2: { attribute: ['Error Message.', 100]},
+  prop2: { attribute: ['Error Message.', 100] },
   //explicitly defined as an object
   prop3: { attribute: { msg: 'Error Message.', option: 100 } }
 })
 ```
 
-## String Attributes
+## ```String``` attributes
 
 Using feathers-schema, blank strings are converted to ```null```.
 
-### length
+### ```length```
 
-The length attribute validates the length of a string.
+The ```length``` attribute validates the length of a string.
 ```js
 /*
 
@@ -215,7 +298,7 @@ Configurations: * = required
 
 */
 
-const msg = 'Fool! Tweets must be under a hundred and forty four characters! You\'ll kill us all!'
+const msg = 'Fool! You\'ll kill us all!'
 const type = String
 new Schema({
 //Ways to validate a string of 144 characters or less:
@@ -237,9 +320,9 @@ new Schema({
 
 ```
 
-### format, email, alpha, numeric, alphanumeric and nospaces
+### ```format```, ```email```, ```alpha```, ```numeric```, ```alphanumeric``` and ```nospaces```
 
-The format attribute will validate a string against a regular expression. It will
+The ```format``` attribute will validate a string against a regular expression. It will
 throw an error if an input value does not pass the regular expression test() method.
 ```js
 /*
@@ -254,7 +337,8 @@ const schema = new Schema({
 })
 ```
 
-email, alpha, numeric, alphanumeric and nospaces are simply canned format validators:
+The ```email```, ```alpha```, ```numeric```, ```alphanumeric``` and ```nospaces``` attributes are simply canned ```format``` validators:
+
 ```js
 /*
 
@@ -274,9 +358,8 @@ const schema = new Schema({
 
 ```
 
-### lowercase, uppercase and trim
+### ```lowercase```, ```uppercase``` and ```trim```
 
-These attributes sanitize a string property.
 ```js
 /*
 No Configuration
@@ -302,10 +385,10 @@ schema.sanitize({
 //}
 ```
 
-## Number Attributes
+## ```Number``` attributes
 
-### range
-The range attribute validates the range of a number.
+### ```range```
+The ```range``` attribute validates the range of a number.
 ```js
 /*
 
@@ -330,7 +413,7 @@ new Schema({
 
 ```
 
-### even and odd
+### ```even``` and ```odd```
 
 Pretty self explanatory:
 ```js
@@ -350,26 +433,235 @@ new Schema({
 
 ```
 
-## General Attributes
+## General attributes
 
 General attributes can be applied to a many (or all) types.
 
-### default
+### ```default```
 
-The default attribute can be placed on any type. It will sanitize undefined
-values as the provided default.
+The ```default``` attribute can be placed on any type. It will sanitize ```undefined```
+or ```null``` values as the provided default.
 ```js
+/*
+
+Configuration: * = required
+{ value:(property type or Function)*,  msg: String }
+
+*/
+
 new Schema({
-  score: { type: Number, default: 0 }
+  score: { type: Number, default: 0 },
+  //default may also take a function
+  chant: { type: String, default: () => 'go sports team!\n'.repeat(5)}
 })
 ```
 
-### required
 
-The required attribute can be placed on any type. It will return an error to
-any value that is null or undefined.
+### ```required```
+
+The ```required``` attribute can be placed on any type. It will validate undefined or
+null values, throwing an error.
+
 ```js
+/*
+
+Configuration: * = required
+{ condition:Function*,  msg: String }
+
+*/
+
+const onFridays = () => new Date().getDay() === 5
+
 new Schema({
-  name: { type: String, required: true }
+  name: { type: String, required: true },
+  //required may also take a function
+  coverCharge: { type: String, required: onFridays }
+  //required attribute on an array property means that the array must exist,
+  //and must have more than 0 items
+  comments: [{type: String, required: true}]
 })
+```
+
+## Hook attributes
+
+Hook attributes only have an effect when the schema is being used in a feathers
+service in the form of hooks. If you're just calling the validate/sanitize methods
+on a built schema (if you're using them client side, for example) they will not
+do anything.
+
+### ```unique```
+
+The ```unique``` attributes validates that a property value is unique amongst all other documents in it's service.
+
+```js
+/*
+Configuration: * = required
+{ msg: String }
+*/
+
+new Schema({
+  accountName: { type: String, unique: true }
+})
+```
+
+### ```service```
+
+The ```service``` attribute can only be placed on ```String```, ```Number``` or ```ObjectId``` typed properties. It acts as an associative filter, only allowing values that correspond with ids of
+other services. It's important to ensure that the type property being used matches the type of
+id the database adapter for that service is using.
+
+```js
+/*
+
+Configuration: * = required
+{ name: String* }
+
+*/
+
+//linking to two hypothetical services that are using, say, mongodb
+new Schema({
+  essay: String,
+  author: { type: ObjectId, service: 'authors' },
+  comments: [{ type: ObjectId, service: 'comments'}]
+})
+
+```
+___
+
+# Custom Validators and Sanitizers
+
+## ```sanitize``` and ```validate```
+You can create your own functions to sanitize an validate data with the ```sanitize``` and ```validate``` attributes, respectively.
+
+```js
+
+//validate and sanitize cant be configured as an Object. Either a Function
+//or an array of Functions
+
+const capitalize = input => {
+  //its possible for the input to be null or undefined
+  if (input == null)
+    return input
+
+  return input[0].toUpperCase() + input.slice(1)
+}
+
+const nomonsters = input => {
+
+  //null values should pass validation. They'll be caught by the required
+  //validator, if it exists.s
+  if (input == null)
+    return false  // falsey values means validation passed. Was there an error? false.
+
+  return ['krampus', 'cthulu', 'bigfoot'].includes(input.toLowerCase())
+    ? false
+    : 'No monsters allowed.' // failed validations should return an error message.
+}
+
+new Schema({
+  name: {
+    type: String,
+    sanitize: capitalize,
+    validate: nomonsters
+  }
+})
+
+```
+
+## Accessing property values
+
+If you want to create re-usable validators, it might be important to know information
+about the property it's being used on. Inside a validator, ```this``` can be used to
+do exactly that.
+
+```js
+
+import { ANY } from 'feathers-schema/types'
+
+new Schema({
+  data: { type: ANY, validate: isOrHasLengthKey }
+})
+
+const PASS = false
+//use the function keyword, not () => to access property values
+//(this is not a very practical example)
+function isOrHasLengthKey(input) {
+
+  //by convention, once again, let the required validator catch non-defined values
+  if (!is(input))
+    return PASS
+
+  //this.key stores the key of the property. In the above
+  //example, it would be 'data'
+  if (this.key === 'length')
+    return PASS
+
+  //this.type stores the type of the property
+  //this.array is true if this is an array property
+  if (this.type === String || this.type === Buffer || this.array)
+    return PASS
+
+  //this.parent stores the parent property. (null if root property)
+  if (this.parent && this.parent.key === 'length')
+    return PASS
+
+  return typeof input === 'object' && 'length' in input
+    ? PASS
+    : 'Must have length key.'
+
+}
+
+```
+
+## Higher Order Validators
+
+You can fashion a validator as a higher-order function. This way you can place additional restrictions on how the validator is used.
+
+```js
+
+import { assert } from 'feathers-schema/types'
+
+//TODO: finish this example
+
+```
+
+## Using Hook Parameters
+
+If you intend for a custom validator or sanitizer to use parameters supplied by feathers
+you can do so by utilizing them in the methods second argument:
+
+```js
+//TODO: finish this example.
+```
+
+Its important that you handle the case of the parameters not being provided, otherwise
+your validator will break client-side.
+
+## Schema Options
+
+```js
+//TODO: finish this example once options finalized.
+```
+___
+
+# Custom Types
+```js
+//TODO: finish this example once custom types are fleshed out.
+```
+
+___
+
+# Associations
+```js
+//TODO: finish this example once associations are fleshed out.
+```
+
+___
+
+# Further Considerations
+
+```js
+// TODO detail further considerations about interweaving hooks, database adapter
+// restrictions (if any)
+
 ```

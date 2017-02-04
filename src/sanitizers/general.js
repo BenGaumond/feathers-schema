@@ -20,9 +20,9 @@ export function _default(...config) {
 
   const getDefault = is(value, Function) ? value : () => value
 
-  return (input, params) => is(input)
+  return async (input, params) => is(input)
     ? input
-    : getDefault(params)
+    : await getDefault(params)
 
 }
 

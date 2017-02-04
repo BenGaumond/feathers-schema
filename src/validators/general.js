@@ -1,5 +1,5 @@
 import { parseConfig, array, getIn } from '../helper'
-import { assert } from '../types'
+import { assert, ObjectId } from '../types'
 import is from 'is-explicit'
 
 const PASS = false
@@ -11,7 +11,7 @@ export function required(...config) {
     msg: { type: String, default: 'Required.'}
   })
 
-  return value => condition(value)
+  return async (value, params) => await condition(value, params)
 
     //condition says value is required
     ? is(value)
@@ -63,6 +63,9 @@ export function _enum(...config) {
 
 export function unique(...config) {
 
+  assert(this.type, ObjectId, String, Number)
+
+
   const { msg } = parseConfig(config, {
     msg: { type: String, default: 'Must be unique.'}
   })
@@ -83,7 +86,7 @@ export function unique(...config) {
 
     curr = curr.parent
 
-  } while (curr.parent)
+  } while (curr)
 
   //unfortunately, feathers cannot query nested properties.
   //(Or at least, all database adapters can't)

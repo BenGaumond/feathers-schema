@@ -1,11 +1,9 @@
-node_modules
 src
-src-dev
 test
 .babelrc
 .eslintrc.js
 .gitignore
-webpack.config.js
-documentation
+api-intro.md
+api.md
 playground.js
 npm-debug.log

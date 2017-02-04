@@ -57,7 +57,9 @@ class PropertyBase {
     if (key in this.properties)
       throw new Error(`Property already exists: ${key}`)
 
-    return this.properties[key] = new Type(definition, key, this)
+    const parent = is(this, Schema) ? null : this
+
+    return this.properties[key] = new Type(definition, key, parent)
 
   }
 
@@ -235,19 +237,21 @@ class Property extends PropertyBase {
 
     let values = cast(input, this.type, this.array)
 
-    //then we sanitize the value as a whole
+    //run all the sanitizers on this property
     for (const sanitizer of this.sanitizers)
       values = await sanitizer(values, params)
 
-    if (!this.properties)
+    //if sanitization returned a null value, we don't need to continue
+    if (!is(values))
       return values
 
     values = array(values)
 
-    for (let i = 0; i < values.length; i++) {
+    //run the sanitiers for sub properties, if there are any
+    if (this.properties) for (let i = 0; i < values.length; i++) {
       const value = values[i]
 
-      //if the sanitizers array returned a value that isn't a plain object
+      // dont validate sub properties if value isn't a plain object,
       if (!isPlainObject(value))
         continue
 
@@ -265,7 +269,8 @@ class Property extends PropertyBase {
       values[i] = sanitized
     }
 
-    return is.array ? values : values[0]
+    //only return an array if this is an array property
+    return array.unwrap(values, !this.array)
   }
 
   async validate(value, params) {
@@ -344,7 +349,7 @@ class Property extends PropertyBase {
 // Export Schema
 /******************************************************************************/
 
-export const RESERVED_PROPERTY_KEYS
+export { RESERVED_PROPERTY_KEYS }
 
 export default class Schema extends PropertyBase {
 
