@@ -15,6 +15,12 @@ ___
 
 The following assumes you're familiar with feathers.js workflow. If you've never heard of feathers.js before, it's great. Learn it: [feathers.js](http://www.feathersjs.com)
 
+## Install
+
+```
+npm install feathers-schema
+```
+
 ## Define a Schema
 
 ```js
