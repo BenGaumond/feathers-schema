@@ -26,20 +26,20 @@ export default function populateWithSchema(schema) {
 
       for (let i = 0; i < asBulk.length; i++) {
 
-        const data = asBulk[i]
-
         //A set of params that sanitization functions can use to their benefit. Similar
         //to the hook, with an added property for the current service. Also, sending
         //this object prevents sanitization methods from mutating the hook object,
         //respecting encapsulation.
-        const arg = { id, app, method, data, service: this }
+        const arg = { id, app, method, service: this }
 
-        asBulk[i] = await schema.sanitize(arg.data, arg)
+        const data = asBulk[i]
+
+        asBulk[i] = await schema.sanitize(data, arg)
 
       }
 
       hook.data = array.unwrap(asBulk, !isBulk)
-        
+
       return next(null, hook)
 
     } catch (err) {

@@ -401,9 +401,15 @@ export default class Schema extends PropertyBase {
     if (!isPlainObject(params))
       throw new Error('if provided, sanitize\'s second argument must be a plain object to be used as sanitize parameters.')
 
+    //the params object should always have the entirety of the data being sanitized.
+    //this way it can be used by custom sanitize methods weather the schema is
+    //being used client or server-side
+    params.data = data
+
     const sanitized = {}
 
     for (const property of this.properties) {
+
       const { key } = property
 
       if (key in data === false)
@@ -411,6 +417,7 @@ export default class Schema extends PropertyBase {
 
       const value = await property.sanitize(data[key], params)
       sanitized[key] = value
+
     }
 
     return sanitized
@@ -426,6 +433,11 @@ export default class Schema extends PropertyBase {
       throw new Error('if provided, validate\'s second argument must be a plain object to be used as validate parameters.')
 
     let errors = false
+
+    //the params object should always have the entirety of the data being validated.
+    //this way it can be used by custom validate methods weather the schema is
+    //being used client or server-side
+    params.data = data
 
     for (const property of this.properties) {
 

@@ -34,15 +34,16 @@ export default function populateWithSchema(schema) {
     let errors = null
 
     for (let i = 0; i < asBulk.length; i++) {
-      const data = asBulk[i]
 
       //A set of params that validation functions can use to their benefit. Similar
       //to the hook, with an added property for the current service. Also, sending
       //this object prevents validation methods from mutating the hook object,
       //respecting encapsulation.
-      const arg = { id, app, method, data, service: this }
+      const arg = { id, app, method, service: this }
 
-      const result = await schema.validate(arg.data, arg)
+      const data = asBulk[i]
+
+      const result = await schema.validate(data, arg)
       if (!result)
         continue
 
