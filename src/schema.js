@@ -4,7 +4,7 @@ import { populateWithSchema, sanitizeWithSchema, validateWithSchema } from './ho
 import * as sanitizers  from './sanitizers'
 import * as validators from './validators'
 
-import { ALL, ANY, cast, check } from './types'
+import { ALL, DEFAULT, ANY, cast, check, name } from './types'
 import is from 'is-explicit'
 
 /******************************************************************************/
@@ -49,7 +49,7 @@ const PARENT = Symbol('parent')
 
 class PropertyBase {
 
-  addProperty(definition, key, Type = this.constructor) {
+  addProperty(input, key, Type = this.constructor) {
 
     if (!isPlainObject(this.properties))
       this.properties = { ...spreadable }
@@ -59,7 +59,7 @@ class PropertyBase {
 
     const parent = is(this, Schema) ? null : this
 
-    return this.properties[key] = new Type(definition, key, parent)
+    return this.properties[key] = new Type(input, key, parent)
 
   }
 
@@ -114,9 +114,7 @@ function addStock(def, stock, arr) {
   }
 }
 
-//Why copy a definition?
-//If a schema is nested, it's properties will be rebuilt into the parent
-//schema using their definitions. It's important
+
 function copyDefinition(definition) {
 
   if (!isPlainObject(definition))
@@ -138,8 +136,15 @@ function copyDefinition(definition) {
 
 function applyDefinition(definition) {
 
+  //we store the definition property so that it can be used when composing schemas
   this[DEFINITION] = definition
 
+  //Why copy a definition?
+  //If a schema is nested, it's properties will be rebuilt into the parent
+  //schema using their definitions. It's possible for sanitizers or validators
+  //to mutate the definition in the process of creating methods, so to ensure
+  //we dont damage the definition for future schemas to use when nesting, we
+  //create a copy for the s&vs to play with.
   const mutableDefinition = copyDefinition(definition)
 
   addStock.call(this, mutableDefinition, validators, this.validators)
@@ -166,7 +171,6 @@ function applyDefinition(definition) {
     //keys as property names. eg: { '@type': "value" } becomes { type: "value"}
     this.addProperty(subProperties[key], fixKeyAtSymbol(key))
 
-  //we store the definition property so that it can be used when composing schemas
 }
 
 function applyNestedSchema(schema) {
@@ -185,51 +189,71 @@ function applyNestedSchema(schema) {
 
 class Property extends PropertyBase {
 
-  // the constructor of a property parses the definition for that property
-  constructor(definition, key, parent) {
+  // the constructor of a property parses the input for that property
+  constructor(input, key, parent) {
     super()
 
     this.key = key
     this[PARENT] = parent
 
     //Determine if array
-    this.array = is(definition, Array)
-    if (this.array && definition.length === 0)
-      definition = { type: ANY }
+    this.array = is(input, Array)
+    //if an empty array was supplied, the rest of the definition is pretty simple
+    if (this.array && input.length === 0)
+      input = { type: ANY }
 
-    else if (this.array && definition.length > 1)
+    else if (this.array && input.length > 1)
       throw new Error('Malformed property: Properties defined as Arrays should only contain a single element.')
 
     else if (this.array)
-      definition = definition[0]
+      input = input[0]
 
     //Determin type
     //schemas should be composable
-    if (is(definition, Schema))
-      return applyNestedSchema.call(this, definition)
+    if (is(input, Schema))
+      return applyNestedSchema.call(this, input)
 
-    else if (ALL.includes(definition))
-      definition = { type: definition }
+    else if (ALL.includes(input))
+      input = { type: input }
 
-    //pass empty Object in as Object type
-    else if (isPlainObject(definition) && 'type' in definition === false)
-      definition = { type: Object, ...definition }
-
-    if (!isPlainObject(definition))
+    if (!isPlainObject(input))
       throw new Error('Malformed property: Could not convert to Type notation.')
 
-    this.type = definition.type || ANY
+    //try to get type from shortcut type notation, eg:
+    //property: { String } insteadof property: { type: String }
+    if ('type' in input === false) for (const type of DEFAULT) {
+      const key = name(type)
+
+      const hasShortCut = key in input && input[key] === type
+      if (!hasShortCut)
+        continue
+
+      //if we've gotten here, there are multiple shortcut properties eg:
+      //property: { String, Number, ANY }
+      if (input.type || input.type === ANY)
+        throw new Error(`Multiple types defined: ${name(input.type)}`)
+
+      input.type = type
+      delete input[key]
+    }
+
+    //if we've gotten here, but still dont have a type defined, then it must be an
+    //object.
+    if ('type' in input === false)
+      input.type = Object
+
+    this.type = input.type
     if (!ALL.includes(this.type))
       throw new Error(`Malformed property: ${this.type} is not a valid type.`)
 
-    applyDefinition.call(this, definition)
+    applyDefinition.call(this, input)
   }
 
-  addProperty(definition, key) {
+  addProperty(input, key) {
     if (this.type !== Object)
       throw new Error('Cannot nest properties inside of a property that isn\'t a plain object.')
 
-    return super.addProperty(definition, key)
+    return super.addProperty(input, key)
 
   }
 
@@ -337,9 +361,7 @@ class Property extends PropertyBase {
 
   validators = []
 
-  get parent() {
-    return this[PARENT]
-  }
+  get parent () { return this[PARENT] }
 
   [PARENT] = null
 
@@ -353,7 +375,7 @@ export { RESERVED_PROPERTY_KEYS }
 
 export default class Schema extends PropertyBase {
 
-  constructor(definitions, options) {
+  constructor(inputs, options) {
     super()
 
     //Check options
@@ -371,13 +393,13 @@ export default class Schema extends PropertyBase {
       throw new Error('Schema options.canSkipValidation is expected to be a boolean or a predicate function.')
 
     //Create properties
-    if (!isPlainObject(definitions))
-      throw new Error('A schema must be created with a plain definitions object.')
+    if (!isPlainObject(inputs))
+      throw new Error('A schema must be created with a plain inputs object.')
 
-    for (const key in definitions)
+    for (const key in inputs)
       //the fixKeyAtSymbol() is important here, because it allows the use of reserved property
       //keys as property names. eg: { '@type': "value" } becomes { type: "value"}
-      this.addProperty(definitions[key], fixKeyAtSymbol(key))
+      this.addProperty(inputs[key], fixKeyAtSymbol(key))
 
     if (this.properties === null)
       throw new Error('Schema was created with no properties.')
@@ -389,8 +411,8 @@ export default class Schema extends PropertyBase {
 
   }
 
-  addProperty(definition, key) {
-    super.addProperty(definition, key, Property)
+  addProperty(input, key) {
+    super.addProperty(input, key, Property)
   }
 
   async sanitize(data, params = {}) {

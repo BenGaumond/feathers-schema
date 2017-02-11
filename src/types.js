@@ -102,6 +102,8 @@ export default ALL
 
 export { ALL, ANY, ObjectId, Buffer }
 
+export const DEFAULT = DEFAULT_TYPES
+
 export function setCustom(type, method) {
 
   if (!is(type, Function))

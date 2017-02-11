@@ -82,10 +82,16 @@ describe('Property Definitions', () => {
       return equivalentValidatorOutput(original, type)
     })
 
+    it('Short notation: { prop: { Number } }', () => {
+      const plain = createValidator({ prop: { Number } })
+      return equivalentValidatorOutput(original, plain)
+    })
+
     it('Type notation: \t{ prop: { type: Number } }', () => {
       const plain = createValidator({ prop: { type: Number } })
       return equivalentValidatorOutput(original, plain)
     })
+
 
   })
 
@@ -95,6 +101,11 @@ describe('Property Definitions', () => {
 
     it('Quick notation: { prop: [Number] }', () => {
       const type = createValidator({ prop: [Number] })
+      return equivalentValidatorOutput(original, type)
+    })
+
+    it('Short notation: { prop: [{ Number }] }', () => {
+      const type = createValidator({ prop: [{ Number }] })
       return equivalentValidatorOutput(original, type)
     })
 
