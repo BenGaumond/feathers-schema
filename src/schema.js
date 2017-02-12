@@ -137,7 +137,7 @@ function copyDefinition(definition) {
 function applyDefinition(definition) {
 
   //we store the definition property so that it can be used when composing schemas
-  this[DEFINITION] = definition
+  this[DEFINITION] = array(definition, this.array)
 
   //Why copy a definition?
   //If a schema is nested, it's properties will be rebuilt into the parent
@@ -173,13 +173,20 @@ function applyDefinition(definition) {
 
 }
 
-function applyNestedSchema(schema) {
+function applyNestedProperties(input) {
 
-  this.type = Object
-  this[DEFINITION] = schema
+  if (is(input, Property)) {
+    this.type = input.type
+    applyDefinition.call(this, array.unwrap(input[DEFINITION]), this.key)
 
-  for(const property of schema.properties)
-    this.addProperty(property[DEFINITION], property.key)
+  } else if (input.properties) {
+    this.type = Object
+    this[DEFINITION] = input
+
+    for(const property of input.properties)
+      this.addProperty(property[DEFINITION], property.key)
+
+  } else throw new Error('Problem applying nested properties.')
 
 }
 
@@ -187,11 +194,14 @@ function applyNestedSchema(schema) {
 // Property Class
 /******************************************************************************/
 
-class Property extends PropertyBase {
+export class Property extends PropertyBase {
 
   // the constructor of a property parses the input for that property
-  constructor(input, key, parent) {
+  constructor(input, key, parent = null) {
     super()
+
+    if (parent !== null && !is(parent, PropertyBase))
+      throw new Error('parent must be either a Schema or a Property.')
 
     this.key = key
     this[PARENT] = parent
@@ -209,9 +219,9 @@ class Property extends PropertyBase {
       input = input[0]
 
     //Determin type
-    //schemas should be composable
-    if (is(input, Schema))
-      return applyNestedSchema.call(this, input)
+    //schemas and properties should be composable
+    if (is(input, PropertyBase))
+      return applyNestedProperties.call(this, input)
 
     else if (ALL.includes(input))
       input = { type: input }
@@ -368,10 +378,8 @@ class Property extends PropertyBase {
 }
 
 /******************************************************************************/
-// Export Schema
+// Schema class
 /******************************************************************************/
-
-export { RESERVED_PROPERTY_KEYS }
 
 export default class Schema extends PropertyBase {
 
@@ -490,8 +498,14 @@ export default class Schema extends PropertyBase {
 
     sanitize: null,
 
-    validate: null,
+    validate: null
 
   }
 
 }
+
+/******************************************************************************/
+// Other Exports
+/******************************************************************************/
+
+export { RESERVED_PROPERTY_KEYS }
