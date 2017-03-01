@@ -6,7 +6,7 @@ import bodyParser from 'body-parser'
 
 import middleware from './middleware'
 
-const PORT = 5000
+const PORT = 5001
 const HOST = 'localhost'
 
 export default class App {
