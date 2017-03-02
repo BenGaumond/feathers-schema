@@ -83,6 +83,20 @@ describe('Stock General Validators', () => {
 
     })
 
+    it('works on nested properties', async () => {
+
+      const schema = createSinglePropertySchema({
+        first: String,
+        last: String,
+        required: true
+      })
+
+      const results = await schema.validate({})
+
+      assert.deepEqual(results, { prop: 'Required.' })
+
+    })
+
   })
 
   describe('enum validator', () => {

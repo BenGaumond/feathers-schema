@@ -408,7 +408,7 @@ Configurations: * = required
 const type = Number
 new Schema({
   //Between Configurations:
-  SIN: { type, range: [1000000000, 999999999] },
+  SIN: { type, range: [100000000, 999999999] },
   age: { type, range: { min: 19, max: 99, msg: 'No teenagers or centenarians.'} },
 
   //Compare Configurations:
@@ -541,100 +541,75 @@ You can create your own functions to sanitize an validate data with the ```sanit
 
 ```js
 
-//validate and sanitize cant be configured as an Object. Either a Function
-//or an array of Functions
+const batmanify = () => {
 
-const capitalize = input => {
-  //its possible for the input to be null or undefined
-  if (input == null)
-    return input
+  //MUST be created out of higher-order functions.
+  //This example doesn't require any set up, it simply returns the actual method
+  return value => {
 
-  return input[0].toUpperCase() + input.slice(1)
-}
+    //null or undefined values should be ignored by a sanitizer, by convention.
+    //If you'd like to give a property a default value, use the 'default' sanitizer.
+    if (value == null)
+      return value
 
-const nomonsters = input => {
+    return value.replace(/bruce\swayne/gi, 'Batman')
 
-  //null values should pass validation. They'll be caught by the required
-  //validator, if it exists.s
-  if (input == null)
-    return false  // falsey values means validation passed. Was there an error? false.
-
-  return ['krampus', 'cthulu', 'bigfoot'].includes(input.toLowerCase())
-    ? false
-    : 'No monsters allowed.' // failed validations should return an error message.
-}
-
-new Schema({
-  name: {
-    type: String,
-    sanitize: capitalize,
-    validate: nomonsters
   }
-})
-
-```
-
-## Accessing property values
-
-If you want to create re-usable validators, it might be important to know information
-about the property it's being used on. Inside a validator, ```this``` can be used to
-do exactly that.
-
-```js
-
-import { ANY } from 'feathers-schema/types'
-
-new Schema({
-  data: { type: ANY, validate: isOrHasLengthKey }
-})
-
-const PASS = false
-//use the function keyword, not () => to access property values
-//(this is not a very practical example)
-function isOrHasLengthKey(input) {
-
-  //by convention, once again, let the required validator catch non-defined values
-  if (!is(input))
-    return PASS
-
-  //this.key stores the key of the property. In the above
-  //example, it would be 'data'
-  if (this.key === 'length')
-    return PASS
-
-  //this.type stores the type of the property
-  //this.array is true if this is an array property
-  if (this.type === String || this.type === Buffer || this.array)
-    return PASS
-
-  //this.parent stores the parent property. (null if root property)
-  if (this.parent && this.parent.key === 'length')
-    return PASS
-
-  return typeof input === 'object' && 'length' in input
-    ? PASS
-    : 'Must have length key.'
-
 }
 
+new Schema({
+
+  article: {
+    type: String,
+    sanitize: batmanify
+  }
+
+})
+
 ```
 
-## Higher Order Validators
+## Accessing Property Info
 
-You can fashion a validator as a higher-order function. This way you can place additional restrictions on how the validator is used.
+When creating a validator or sanitizer, you can access property info to ensure proper
+usage or to help with validation.
 
 ```js
 
-import { assert } from 'feathers-schema/types'
+//Ensure that you use the function keyword, NOT an arrow function
+function supermanify() {
 
-//TODO: finish this example
+  //this.type will contain a type of the current property.
+  if (this.type !== String)
+    //this.key will contain the name of the current property.
+    throw new Error(`${this.key} is not a String property. 'supermanify' must be placed on String properties.`)
 
+  return value => {
+
+    //null or undefined values should be ignored by a sanitizer, by convention.
+    //If you'd like to give a property a default value, use the 'default' sanitizer.
+    if (value == null)
+      return value
+
+    return value.replace(/clark\skent/gi, 'Superman')
+
+  }
+}
+
+new Schema({
+
+  article: {
+    type: String,
+    sanitize: supermanify
+  }
+
+})
+
+//TODO: finish this example.
 ```
 
 ## Using Hook Parameters
 
-If you intend for a custom validator or sanitizer to use parameters supplied by feathers
-you can do so by utilizing them in the methods second argument:
+If you intend for a custom validator or sanitizer to use parameters supplied by feathers you can do so by utilizing them in the methods second argument:
 
 ```js
 //TODO: finish this example.

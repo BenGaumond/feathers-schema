@@ -82,12 +82,10 @@ function addCustom(defs, key, arr) {
   for (const factory of factories) {
     try {
 
-      const result = factory.call(this, def)
+      const func = factory.call(this, def)
 
-      //We're expecting custom validators to be a function factory.
-      //However, if they don't return a function, we'll assume that the
-      //factory is actually the custom validator, and not it's result.
-      const func = is(result, Function) ? result : factory
+      if (!is(func, Function))
+        throw new Error('Custom Validators must be a higher-order function that returns the validator function.')
 
       arr.push(func)
 
@@ -113,7 +111,6 @@ function addStock(def, stock, arr) {
     }
   }
 }
-
 
 function copyDefinition(definition) {
 
@@ -337,9 +334,11 @@ export class Property extends PropertyBase {
       for (const property of this.properties) {
         const { key } = property
 
+        const propValue = is(value, Object) ? value[key] : null
+
         //we don't need to check if value is an object, because it's only possible
         //to get here if it is one
-        const keyResult = await property.validate(value[key], params)
+        const keyResult = await property.validate(propValue, params)
         if (!keyResult)
           continue
 
@@ -442,11 +441,10 @@ export default class Schema extends PropertyBase {
 
       const { key } = property
 
-      if (key in data === false)
-        continue
-
       const value = await property.sanitize(data[key], params)
-      sanitized[key] = value
+
+      if (is(value))
+        sanitized[key] = value
 
     }
 

@@ -1,4 +1,4 @@
-import Schema from './schema'
+import Schema, { Property } from './schema'
 
 import * as types from './types'
 
@@ -14,7 +14,9 @@ import { parseConfig, isPlainObject, array, idsMatch, rangeValidatorFactory, get
 
 export default Schema
 
-export { Schema, types, hooks, validators, sanitizers,
+export { Schema, Property,
+
+  types, hooks, validators, sanitizers,
 
   //custom validator helpers
   idsMatch, parseConfig, rangeValidatorFactory,

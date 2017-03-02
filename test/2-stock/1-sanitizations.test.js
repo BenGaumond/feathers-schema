@@ -1,5 +1,5 @@
-import { assert  } from 'chai'
-
+import { assert } from 'chai'
+import Schema from '../../src'
 import { createSinglePropertySchema, schemaShouldThrow, schemaShouldNotThrow } from '../helper'
 
 /* global describe it */
@@ -71,6 +71,24 @@ describe('Stock General Sanitizers', () => {
       }])
 
       return testSchema(schema, 'wtf is this shit', def)
+
+    })
+
+    it('handles nested objects', async () => {
+
+      const schema = new Schema({
+
+        name: {
+          first: { String, default: 'Jane'},
+          last: { String, default: 'Doe'},
+          default: () => new Object()
+        }
+
+      })
+
+      const results = await schema.sanitize({})
+
+      assert.deepEqual(results, { name: { first: 'Jane', last: 'Doe' }})
 
     })
   })
