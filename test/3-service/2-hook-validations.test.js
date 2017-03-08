@@ -16,6 +16,8 @@ const person = new Schema({
     alias: { type: String, nospaces, unique }
   },
 
+  email: { type: String, unique },
+
   gender: { type: String, enum: ['male', 'female'], required },
 
   age: { type: Number, range: [ '>=', 0, 'Must be born.' ] },
@@ -109,28 +111,36 @@ describe('Stock Server Validations', () => {
 
     })
 
-    const twoInOne = async () => {
+    it('Ensures property has a unique value.', async () => {
+
+      const kirk = await service.create({
+        name: { first: 'James', last: 'Kirk', alias: 'Capn' },
+        email: 'james@enterprise.com',
+        gender: 'male',
+        age: 32,
+        SIN: 7126
+      })
+
+      await service.create({
+        name: { first: 'Scotty', last: 'McWhatever' },
+        email: 'scotty@enterprise.com',
+        gender: 'male',
+        age: 45,
+        SIN: 7128
+      })
+
       let err
-
       try {
-
-        await service.create({
-          name: { first: 'Richard', last: 'Bonnel' },
-          gender: 'male',
-          age: 30,
-          SIN: 2412
+        await service.patch(kirk.id, {
+          email: 'scotty@enterprise.com'
         })
-
       } catch (e) {
-
         err = e.errors
       }
 
-      assert(err, 'No error returned by query.')
-      assert.equal(err.SIN,'IMPOSTER!')
-    }
+      assert.deepEqual(err, { email: 'Must be unique.'})
 
-    it('Ensures property has a unique value.', twoInOne)
+    })
 
     it('Ensures nested property has a unique value.', async () => {
 
@@ -155,7 +165,26 @@ describe('Stock Server Validations', () => {
 
     })
 
-    it('Optionally takes a custom error message.', twoInOne)
+    it('Optionally takes a custom error message.', async () => {
+      let err
+
+      try {
+
+        await service.create({
+          name: { first: 'Richard', last: 'Bonnel' },
+          gender: 'male',
+          age: 30,
+          SIN: 2412
+        })
+
+      } catch (e) {
+
+        err = e.errors
+      }
+
+      assert(err, 'No error returned by query.')
+      assert.equal(err.SIN,'IMPOSTER!')
+    })
 
     after(async () => await app.end())
 

@@ -1,4 +1,4 @@
-import { parseConfig, array, getIn } from '../helper'
+import { parseConfig, idsMatch, array, getIn } from '../helper'
 import { assert, ObjectId } from '../types'
 import is from 'is-explicit'
 
@@ -88,35 +88,7 @@ export function unique(...config) {
 
   } while (curr)
 
-  //unfortunately, feathers cannot query nested properties.
-  //(Or at least, all database adapters can't)
-  //If the path is nested, we need to find every document in the service,
-  //and check them. To save time on non-nested properties, unique validators
-  //are supplied with a different function depending on their path
-  const existing = path.length > 1
-    ? async (service, query, input) => {
-
-      const docs = await service.find({query})
-
-      let count = 0
-      for (const doc of docs) {
-        if (getIn(doc, path) === input)
-          count++
-      }
-
-      return count
-    }
-
-    : async (service, query, input) => {
-      query[this.key] = input
-
-      const docs = await service.find({query})
-
-      return docs.length
-    }
-
-
-  return async (input, { service, id, method }) => {
+  return async (input, { service, method, id }) => {
 
     //Undefined values pass.
     //Also, this validator depends on access to server parameters.
@@ -125,14 +97,25 @@ export function unique(...config) {
     if (!is(input) || !is(service, Object))
       return PASS
 
-    const query = { }
+    //unfortunately, feathers cannot query nested properties.
+    //(Or at least, all database adapters can't)
+    //If the path is nested, we need to find every document in the service,
+    //and check them. To be more efficient on non-nested properties,
+    //we can supply a query.
+    const query = path.length === 1 ? { [this.key]:input } : null
 
-    if (method !== 'create') //id wont exist if this is a create
-      query[service.id] = { $ne: id }
+    let docs = await service.find({query})
 
-    const count = await existing(service, query, input)
+    //if this an update or patch, we need to filter the existing doc from the
+    //results, otherwise we'll get a false positive
+    if (method !== 'create')
+      docs = docs.filter(doc => !idsMatch(id, doc[service.id]))
 
-    return count === 0 ? PASS : msg
+    //if there are any docs left after this filter, it means the input value
+    //is not unique
+    docs = docs.filter(doc => getIn(doc, path) === input)
+
+    return docs.length > 0 ? msg : PASS
 
   }
 
