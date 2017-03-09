@@ -34,8 +34,15 @@ export default function populateWithSchema(schema) {
 
         const data = asBulk[i]
 
-        asBulk[i] = await schema.sanitize(data, arg)
+        const sanitized = await schema.sanitize(data, arg)
 
+        //id fields would be removed by sanitization, so we'll add it back in
+        //if the document is being created with a deterministic id
+        const manualId = data[this.id]
+        if (method === 'create' && manualId)
+          sanitized[this.id] = manualId
+
+        asBulk[i] = sanitized
       }
 
       hook.data = array.unwrap(asBulk, !isBulk)

@@ -308,10 +308,17 @@ describe('Hooks', () => {
 
     })
 
+    it.only('allows manual create ids', async () => {
+
+      const id = 42919
+      const doc = await messages.create({ body: 'Whatever', author: 'Ben', scores: [1,2,3], id })
+
+      assert.equal(doc.id, id, ' Ids should be equal')
+    })
+
     after(async () => await app.end())
 
   })
-
 
   describe('Bulk Queries', () => {
 
