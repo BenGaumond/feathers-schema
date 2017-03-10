@@ -32,6 +32,11 @@ const messageSchema = new Schema({
     alphanumeric,
     trim,
     required
+  },
+
+  meta: {
+    keywords: String,
+    location: String
   }
 
 })
@@ -226,22 +231,24 @@ describe('Hooks', () => {
 
   })
 
+  const quicksetup = async () => {
+
+    app = new App()
+    app.use('/messages', memory())
+    messages = app.service('messages')
+    await app.start()
+
+    messages.before({
+      create: [ ...messageSchema.hooks ],
+      patch: [ ...messageSchema.hooks ],
+      update: [ ...messageSchema.hooks ]
+    })
+
+  }
+
   describe('Vaidate hook', () => {
 
-    before(async () => {
-
-      app = new App()
-      app.use('/messages', memory())
-      messages = app.service('messages')
-      await app.start()
-
-      messages.before({
-        create: [ ...messageSchema.hooks ],
-        patch: [ ...messageSchema.hooks ],
-        update: [ ...messageSchema.hooks ]
-      })
-
-    })
+    before(quicksetup)
 
     it('Validates schema properties on data', async () => {
 
@@ -308,36 +315,15 @@ describe('Hooks', () => {
 
     })
 
-    it.only('allows manual create ids', async () => {
-
-      const id = 42919
-      const doc = await messages.create({ body: 'Whatever', author: 'Ben', scores: [1,2,3], id })
-
-      assert.equal(doc.id, id, ' Ids should be equal')
-    })
-
     after(async () => await app.end())
 
   })
 
-  describe('Bulk Queries', () => {
+  describe('All Hooks', () => {
 
-    before(async () => {
+    before(quicksetup)
 
-      app = new App()
-      app.use('/messages', memory())
-      messages = app.service('messages')
-      await app.start()
-
-      messages.before({
-        create: [ ...messageSchema.hooks ],
-        patch: [ ...messageSchema.hooks ],
-        update: [ ...messageSchema.hooks ]
-      })
-
-    })
-
-    it('All Hooks can handle bulk \'create\' and \'patch\' queries. ', async () => {
+    it('Can handle bulk \'create\' and \'patch\' queries. ', async () => {
 
       let errors
       let results
@@ -367,7 +353,26 @@ describe('Hooks', () => {
 
     })
 
+    it('allows manual create ids', async () => {
+
+      const id = 42919
+      const doc = await messages.create({ body: 'Whatever', author: 'Ben', scores: [1,2,3], id })
+
+      assert.equal(doc.id, id, ' Ids should be equal')
+    })
+
+    it('allow properties to be cleared', async () => {
+
+      let doc = await messages.create({ body: 'Very good', author: 'Jeeves', scores: [0], meta: { keywords: 'one', location: 'canada'} })
+
+      doc = await messages.patch(doc.id, { meta: { keywords: '', location: 'usa' }})
+
+      assert.deepEqual(doc.meta, { keywords: null, location: 'usa'})
+
+    })
+
     after(async () => await app.end())
 
   })
+
 })
