@@ -37,7 +37,7 @@ const article = new Schema({
 
 describe('Stock Server Sanitizations', () => {
 
-  describe('service validator', () => {
+  describe('service sanitizer', () => {
 
     let comments, articles, authors, app
 

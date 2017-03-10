@@ -180,7 +180,9 @@ describe('Hooks', () => {
 
       assert.deepEqual(sanitizedData, {
         body: 'message that needs trimming',
-        author: 'Joe User'
+        author: 'Joe User',
+        meta: null,
+        scores: null
       })
     })
 

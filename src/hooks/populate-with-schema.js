@@ -14,9 +14,9 @@ function fillWithProperties(data = {}, fill = {},  properties) {
     const hasKey = key in data
 
     if (!hasKey)
-      data[key] = fill[key]
+      data[key] = fill[key] === undefined ? null : fill[key]
 
-    if (hasKey || property.array || !property.properties || !isPlainObject(fill[key]))
+    if (property.array || !property.properties || !isPlainObject(fill[key]))
       continue
 
     data[key] = fillWithProperties(data[key], fill[key], property.properties)

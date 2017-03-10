@@ -441,10 +441,7 @@ export default class Schema extends PropertyBase {
 
       const { key } = property
 
-      const value = await property.sanitize(data[key], params)
-
-      if (is(value))
-        sanitized[key] = value
+      sanitized[key] = await property.sanitize(data[key], params)
 
     }
 
