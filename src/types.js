@@ -76,9 +76,7 @@ DEFAULT_METHODS.set(Object, value => {
 
 DEFAULT_METHODS.set(ObjectId, value => {
 
-  return is(value, String)
-    ? new ObjectId(value)
-    : null
+  return new ObjectId(String(value))
 
 })
 
@@ -214,7 +212,7 @@ export function cast(input, type, asArray) {
 
   for (const value of values) {
 
-    //empty values, or values that shouldn't be cast at all, are returned as anull
+    //empty values, or values that shouldn't be cast at all, are returned as a null
     if (!is(value) || value === '' || is(value, Symbol, Function) || Number.isNaN(value))
       continue
 

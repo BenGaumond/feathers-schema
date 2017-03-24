@@ -39,7 +39,7 @@ export function service(...config) {
   //because ObjectId's wont pass the standard array.indexOf test
   const indexOf = (id, arr) => {
 
-    if (this.type !== ObjectId)
+    if (!this.type.prototype.equals)
       return arr.indexOf(id)
 
     for (let i = 0; i < arr.length; i++)
