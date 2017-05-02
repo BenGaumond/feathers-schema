@@ -1,5 +1,6 @@
 import { assert  } from 'chai'
 import { ALL } from '../../src/types'
+import Schema from '../../src'
 import is from 'is-explicit'
 
 import { createSinglePropertySchema, schemaShouldThrow, schemaShouldNotThrow } from '../helper'
@@ -80,6 +81,23 @@ describe('Stock General Validators', () => {
       const schema = createSinglePropertySchema([{ type: String, required: true }])
 
       await runValidator(schema, [], 'Required.')
+
+    })
+
+    it('handles the array sub property problem', async () => {
+
+      const required = true
+      const schema = new Schema({
+        items: [{
+          count: { Number, required },
+          name: { String, required }
+        }]
+      })
+
+      const sanitized = await schema.sanitize({})
+      const result = await schema.validate(sanitized)
+
+      assert.deepEqual(result, false)
 
     })
 

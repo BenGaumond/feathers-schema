@@ -323,6 +323,12 @@ export class Property extends PropertyBase {
     if (!this.properties)
       return results
 
+    //if we've gotten here, it's because this is an array property, but it
+    //was initialized as null. Validation on items in an array should only
+    //occur if there are items to validate.
+    if (this.array && value === null)
+      return results
+
     const values = array(value)
 
     results = array(results)
