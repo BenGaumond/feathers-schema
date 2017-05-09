@@ -27,9 +27,9 @@ export function _default(...config) {
     ? value
     : () => value
 
-  return async (input, params) => is(input)
-    ? input
-    : await getDefault(params)
+  return async (input, params) => !is(input) || is(input, Array) && input.length === 0
+    ? await getDefault(params)
+    : input
 
 }
 
