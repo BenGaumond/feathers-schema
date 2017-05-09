@@ -74,6 +74,17 @@ describe('Stock General Sanitizers', () => {
 
     })
 
+    it('function value config is handled correctly in array properties', async () => {
+
+      const schema = createSinglePropertySchema([{
+        type: Number,
+        default: () => 100
+      }])
+
+      return testSchema(schema, null, [100])
+
+    })
+
     it('handles nested objects', async () => {
 
       const schema = new Schema({
