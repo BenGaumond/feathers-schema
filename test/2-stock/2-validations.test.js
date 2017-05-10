@@ -115,6 +115,23 @@ describe('Stock General Validators', () => {
 
     })
 
+    it('doesn\'t force unrequired parent properties to be defined', async () => {
+
+      const schema = new Schema({
+        score: {
+          points: { type: Number, required: true },
+          name: { type: String, required: true },
+        },
+
+        name: { type: String, required: true }
+      })
+
+      const results = await schema.validate({ name: 'Sandwhich', score: null })
+
+      assert.deepEqual(results, false)
+
+    })
+
   })
 
   describe('enum validator', () => {

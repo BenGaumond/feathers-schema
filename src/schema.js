@@ -319,14 +319,9 @@ export class Property extends PropertyBase {
         return results
     }
 
-    //if there are no sub properties, we don't need to continue
-    if (!this.properties)
-      return results
-
-    //if we've gotten here, it's because this is an array property, but it
-    //was initialized as null. Validation on items in an array should only
-    //occur if there are items to validate.
-    if (this.array && value === null)
+    //if we've gotten here, there are no sub properties, or the object wasn't
+    //initialized. As such, sub properties don't need to be validated if they don't exist.
+    if (!this.properties || value === null)
       return results
 
     const values = array(value)
@@ -340,11 +335,7 @@ export class Property extends PropertyBase {
       for (const property of this.properties) {
         const { key } = property
 
-        const propValue = is(value, Object) ? value[key] : null
-
-        //we don't need to check if value is an object, because it's only possible
-        //to get here if it is one
-        const keyResult = await property.validate(propValue, params)
+        const keyResult = await property.validate(value[key], params)
         if (!keyResult)
           continue
 
@@ -360,7 +351,8 @@ export class Property extends PropertyBase {
 
     return this.array
 
-      //if this is an array value, we only send back an array of results if any of the results are truthy
+      //if this is an array value, we only send back an array of results if any of the
+      //results are truthy; truthy == fail
       ? results.some(result => result) ? results : false
 
       //otherwise the first result in results will be the result of the singular type check
