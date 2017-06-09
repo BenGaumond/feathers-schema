@@ -3,8 +3,9 @@
 # ALPHA VERSION DOCUMENTATION
 If you're reading this, feathers-schema is in alpha, and not all of the functionality is fully described or finalized.
 ___
-## Why?
-  - You're using feathers.js serverside, and you'd like to validate data.
+# Why?
+
+  - You're using [feathers.js](http://www.feathersjs.com) serverside, and you'd like to validate data.
   - You'd also like to validate this data using a variety of database adapters with the same syntax.
   - You'd like to validate data client-side using the same schemas that you create to validate serverside, because you understand the benefits of isomorphism.
   - You're one of those cools we keep hearing about.
@@ -13,7 +14,7 @@ ___
 
 # QuickStart
 
-The following assumes you're familiar with feathers.js workflow. If you've never heard of feathers.js before, it's great. Learn it: [feathers.js](http://www.feathersjs.com)
+The following assumes you're familiar with [feathers.js](http://www.feathersjs.com) workflow. If you've never heard of [feathers.js](http://www.feathersjs.com) before, it's great. Learn it: [feathers.js](http://www.feathersjs.com)
 
 ## Install
 
@@ -82,17 +83,17 @@ and typically you'd want them on all three:
 
   const articleHooks = [...articleSchema.hooks]
 
-  const beforeHooks = {
+  const before = {
     create: articleHooks,
     patch: articleHooks,
     update: articleHooks
   }
 
-  articleService.before(beforeHooks)
+  articleService.hooks({ before })
 ```
 
 **Alternatively**, if you're going to be weaving other hooks throughout for more advanced cases
-_(or if you're a filthy es5 casual who isn't yet usings the rest/spread operator)_
+_(or if you're a filthy es5 casual who isn't yet using the rest/spread operator)_
 you can do this:
 ```js
 const articleHooks = [
@@ -101,13 +102,13 @@ const articleHooks = [
   articleSchema.hooks.validate
 ]
 
-const beforeHooks = {
+const before = {
   create: articleHooks,
   patch: articleHooks,
   update: articleHooks
 }
 
-articleService.before(beforeHooks)
+articleService.hooks({ before })
 
 ```
 
@@ -517,6 +518,7 @@ other services. It's important to ensure that the type property being used match
 id the database adapter for that service is using.
 
 ```js
+
 /*
 
 Configuration: * = required
