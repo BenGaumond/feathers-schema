@@ -1,6 +1,5 @@
 import { ANY } from '../types'
 import array from './ensure-array'
-import isPlainObject from './is-plain-object'
 import is from 'is-explicit'
 
 const EXPECTING_ARRAY = Symbol('expecting-array')
@@ -33,7 +32,7 @@ function valueValid(value, types, throwKey = null) {
 
 function parseDetail(detail) {
 
-  if (!isPlainObject(detail))
+  if (!is.plainObject(detail))
     throw new Error('Malformed config detail object.')
 
   const parsed = {
@@ -44,7 +43,7 @@ function parseDetail(detail) {
     const sub = detail[key]
     let type = ANY, _default, required = false
 
-    if (isPlainObject(sub)) {
+    if (is.plainObject(sub)) {
 
       required = sub.required || required
       type = sub.type
@@ -85,7 +84,7 @@ export default function parseConfig(input, detail) {
   while (is(input, Array) && input.length === 1)
     input = input[0]
 
-  const isObject = isPlainObject(input)
+  const isObject = is.plainObject(input)
   if (!isObject)
     input = array(input)
 

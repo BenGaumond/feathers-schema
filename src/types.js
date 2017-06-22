@@ -1,7 +1,7 @@
 import ObjectId from 'bson-objectid'
 import { Buffer } from 'buffer'
 import is from 'is-explicit'
-import { isPlainObject, array } from './helper'
+import { array } from './helper'
 
 const { freeze } = Object
 
@@ -68,7 +68,7 @@ DEFAULT_METHOD_FLAGS.set(Buffer, value => {
 
 DEFAULT_METHOD_FLAGS.set(Object, value => {
 
-  return isPlainObject(value)
+  return is.plainObject(value)
     ? value
     : null
 
@@ -180,7 +180,7 @@ export function check(input, type, asArray) {
       ? 'Cannot store NaN as a value.'
 
       //values of type Object should only apply for plain objects
-      : type === Object && isDefined && !isPlainObject(value)
+      : type === Object && isDefined && !is.plainObject(value)
       ? `Expected ${asArray ? 'array of plain objects.' : 'a plain object.'}`
 
       //A typed value can equal null, meaning that it is optional. If a value

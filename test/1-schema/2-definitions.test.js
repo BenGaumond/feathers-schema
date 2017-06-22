@@ -1,6 +1,5 @@
 
 import Schema, { types } from '../../src'
-import { isPlainObject } from '../../src/helper'
 import { assert  } from 'chai'
 import is from 'is-explicit'
 import ObjectId from 'bson-objectid'
@@ -170,7 +169,7 @@ describe('Property Definitions', () => {
       return false
 
     if (type === Object)
-      return !isPlainObject(value)
+      return !is.plainObject(value)
 
     return type ? !is(value, type) : false
   }

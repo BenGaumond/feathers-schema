@@ -1,5 +1,4 @@
 import parseConfig from './parse-config'
-import isPlainObject from './is-plain-object'
 import array from './ensure-array'
 import is from 'is-explicit'
 
@@ -76,7 +75,7 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
     msg: String
   })
 
-  const explicitlyDefined = isPlainObject(configArgs[0])
+  const explicitlyDefined = is.plainObject(configArgs[0])
   const isMax = is(max, Number)
   const isMin = is(min, Number)
   const isValue = is(value, Number)
@@ -88,7 +87,7 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
   //set default compare value, and sort msg/compare mixups
   if (!explicitlyDefined && isCompareDefined && !isCompareValid)
     [msg, compare] = [compare, isMsgACompareValue ? msg : '<=>']
-    
+
   else if (!isCompareDefined)
     compare = '<=>'
 

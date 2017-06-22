@@ -1,4 +1,4 @@
-import { isPlainObject, array } from './helper'
+import { array } from './helper'
 import { populateWithSchema, sanitizeWithSchema, validateWithSchema } from './hooks'
 
 import * as sanitizers  from './sanitizers'
@@ -51,7 +51,7 @@ class PropertyBase {
 
   addProperty(input, key, Type = this.constructor) {
 
-    if (!isPlainObject(this.properties))
+    if (!is.plainObject(this.properties))
       this.properties = { ...spreadable }
 
     if (key in this.properties)
@@ -114,7 +114,7 @@ function addStock(def, stock, arr) {
 
 function copyDefinition(definition) {
 
-  if (!isPlainObject(definition))
+  if (!is.plainObject(definition))
     return definition
 
   const copy = { }
@@ -223,7 +223,7 @@ export class Property extends PropertyBase {
     else if (ALL.includes(input))
       input = { type: input }
 
-    if (!isPlainObject(input))
+    if (!is.plainObject(input))
       throw new Error('Malformed property: Could not convert to Type notation.')
 
     //try to get type from shortcut type notation, eg:
@@ -283,7 +283,7 @@ export class Property extends PropertyBase {
       const value = values[i]
 
       // dont validate sub properties if value isn't a plain object,
-      if (!isPlainObject(value))
+      if (!is.plainObject(value))
         continue
 
       //We create a seperate object for the sanitized data, so that
@@ -384,7 +384,7 @@ export default class Schema extends PropertyBase {
     super()
 
     //Check options
-    if (is(options) && !isPlainObject(options))
+    if (is(options) && !is.plainObject(options))
       throw new Error('options, if supplied, are expected to be a plain object.')
 
     this.options = { ...DEFAULT_OPTIONS, ...(options || {})}
@@ -398,7 +398,7 @@ export default class Schema extends PropertyBase {
       throw new Error('Schema options.canSkipValidation is expected to be a boolean or a predicate function.')
 
     //Create properties
-    if (!isPlainObject(inputs))
+    if (!is.plainObject(inputs))
       throw new Error('A schema must be created with a plain inputs object.')
 
     for (const key in inputs)
@@ -422,10 +422,10 @@ export default class Schema extends PropertyBase {
 
   async sanitize(data, params = {}) {
 
-    if (!isPlainObject(data))
+    if (!is.plainObject(data))
       throw new Error('sanitize expects a plain object as data for its first argument.')
 
-    if (!isPlainObject(params))
+    if (!is.plainObject(params))
       throw new Error('if provided, sanitize\'s second argument must be a plain object to be used as sanitize parameters.')
 
     //the params object should always have the entirety of the data being sanitized.
@@ -449,10 +449,10 @@ export default class Schema extends PropertyBase {
 
   async validate(data, params = {}) {
 
-    if (!isPlainObject(data))
+    if (!is.plainObject(data))
       throw new Error('validate expects a plain object as data for its first argument.')
 
-    if (!isPlainObject(params))
+    if (!is.plainObject(params))
       throw new Error('if provided, validate\'s second argument must be a plain object to be used as validate parameters.')
 
     let errors = false

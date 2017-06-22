@@ -1,10 +1,10 @@
 import Schema from '../schema'
 import is from 'is-explicit'
-import { isPlainObject, array } from '../helper'
+import { array } from '../helper'
 
 function fillWithProperties(data = {}, fill = {},  properties) {
 
-  if (!isPlainObject(data))
+  if (!is.plainObject(data))
     data = {}
 
   for (const property of properties) {
@@ -16,7 +16,7 @@ function fillWithProperties(data = {}, fill = {},  properties) {
     if (!hasKey)
       data[key] = fill[key] === undefined ? null : fill[key]
 
-    if (property.array || !property.properties || !isPlainObject(fill[key]))
+    if (property.array || !property.properties || !is.plainObject(fill[key]))
       continue
 
     data[key] = fillWithProperties(data[key], fill[key], property.properties)
