@@ -26,9 +26,9 @@ const DEFAULT_TYPES = freeze([
 // Casting Methods
 /******************************************************************************/
 
-const DEFAULT_METHOD_FLAGS = new Map()
+const DEFAULT_HANDLERS = new Map()
 
-DEFAULT_METHOD_FLAGS.set(String, value => {
+DEFAULT_HANDLERS.set(String, value => {
 
   return is(value, Object) && 'toString' in value
      ? value.toString()
@@ -36,7 +36,7 @@ DEFAULT_METHOD_FLAGS.set(String, value => {
 
 })
 
-DEFAULT_METHOD_FLAGS.set(Number, value => {
+DEFAULT_HANDLERS.set(Number, value => {
 
   return is(value, Object)
     ? 'valueOf' in value ? value.valueOf() : null
@@ -44,9 +44,9 @@ DEFAULT_METHOD_FLAGS.set(Number, value => {
 
 })
 
-DEFAULT_METHOD_FLAGS.set(Boolean, value => !!value)
+DEFAULT_HANDLERS.set(Boolean, value => !!value)
 
-DEFAULT_METHOD_FLAGS.set(Date, value => {
+DEFAULT_HANDLERS.set(Date, value => {
 
   if (!is(value, String, Number))
     return null
@@ -58,7 +58,7 @@ DEFAULT_METHOD_FLAGS.set(Date, value => {
 
 })
 
-DEFAULT_METHOD_FLAGS.set(Buffer, value => {
+DEFAULT_HANDLERS.set(Buffer, value => {
 
   return is(value, Array, String)
     ? Buffer.from(value)
@@ -66,7 +66,7 @@ DEFAULT_METHOD_FLAGS.set(Buffer, value => {
 
 })
 
-DEFAULT_METHOD_FLAGS.set(Object, value => {
+DEFAULT_HANDLERS.set(Object, value => {
 
   return is.plainObject(value)
     ? value
@@ -74,13 +74,13 @@ DEFAULT_METHOD_FLAGS.set(Object, value => {
 
 })
 
-DEFAULT_METHOD_FLAGS.set(ObjectId, value => {
+DEFAULT_HANDLERS.set(ObjectId, value => {
 
   return new ObjectId(String(value))
 
 })
 
-freeze(DEFAULT_METHOD_FLAGS)
+freeze(DEFAULT_HANDLERS)
 
 /******************************************************************************/
 // Types
@@ -125,7 +125,7 @@ export function resetToDefault() {
   for (const type of DEFAULT_TYPES) {
     ALL.push(type)
 
-    const method = DEFAULT_METHOD_FLAGS.get(type)
+    const method = DEFAULT_HANDLERS.get(type)
     if (method)
       methods.set(type, method)
   }
