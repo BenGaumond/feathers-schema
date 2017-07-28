@@ -6,13 +6,13 @@ export default function (app) {
   app.log.error = console.error.bind(console)
   /* eslint-enable */
 
-  return function(error, req, res, next) {
+  return function (error, req, res, next) {
     if (error) {
-      const message = `${error.code ? `(${error.code}) ` : '' }Route: ${req.url} - ${error.message}`
+      const message = `${error.code ? `(${error.code}) ` : ''}Route: ${req.url} - ${error.message}`
 
-      if (error.code === 404) {
+      if (error.code === 404)
         app.log(message)
-      }
+
       else {
         app.log.error(message)
         app.log(error.stack)

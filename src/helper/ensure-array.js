@@ -1,6 +1,6 @@
 import is from 'is-explicit'
 
-export default function ensureArray(input, condition = true) {
+export default function ensureArray (input, condition = true) {
 
   if (!condition)
     return input

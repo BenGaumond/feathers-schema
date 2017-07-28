@@ -10,14 +10,14 @@ const PASS = false
 /******************************************************************************/
 // HELPER
 /******************************************************************************/
-//Javascript sorts by unicode order by default
-const ascending = (a,b) => a - b
+// Javascript sorts by unicode order by default
+const ascending = (a, b) => a - b
 
 const factory = (getValue, getResult, failMsg) => {
 
   return input => {
 
-    //null or undefined values pass validation
+    // null or undefined values pass validation
     if (!is(input))
       return PASS
 
@@ -31,12 +31,12 @@ const factory = (getValue, getResult, failMsg) => {
           : failMsg
       })
 
-    //return an fail array if results contain at least one failure, and input
-    //wasnt an array to begin with
+    // return an fail array if results contain at least one failure, and input
+    // wasnt an array to begin with
     return array
       .unwrap(
         results,
-        !isArray || results.every(r => r == PASS)
+        !isArray || results.every(r => !r)
       )
   }
 }
@@ -51,12 +51,12 @@ const DEFAULT_MSGS = {
 
 const DEFAULT_GET_VALUE = input => input
 
-const COMPARERS = [ '<=', '<', '>', '>=', '<=>']
+const COMPARERS = [ '<=', '<', '>', '>=', '<=>' ]
 /******************************************************************************/
 // EXPORTS
 /******************************************************************************/
 
-export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET_VALUE, defaultMsgs = DEFAULT_MSGS) {
+export default function rangeValidatorFactory (configArgs, getValue = DEFAULT_GET_VALUE, defaultMsgs = DEFAULT_MSGS) {
 
   if (!is(configArgs, Array))
     throw new Error('configArgs is expected to be an array of config arguments.')
@@ -67,7 +67,7 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
   if (!is(defaultMsgs, Object))
     throw new Error('defaultMsgs, if defined, must be an Object')
 
-  let { value, min, max, compare, msg } = parseConfig(configArgs, { //eslint-disable-line prefer-const
+  let { value, min, max, compare, msg } = parseConfig(configArgs, { // eslint-disable-line prefer-const
     min: Number,
     max: Number,
     value: Number,
@@ -84,14 +84,14 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
   // const isMsgDefined = is(msg)
   const isMsgACompareValue = COMPARERS.includes(msg)
 
-  //set default compare value, and sort msg/compare mixups
+  // set default compare value, and sort msg/compare mixups
   if (!explicitlyDefined && isCompareDefined && !isCompareValid)
     [msg, compare] = [compare, isMsgACompareValue ? msg : '<=>']
 
   else if (!isCompareDefined)
     compare = '<=>'
 
-  //check to make sure everything makes sense
+  // check to make sure everything makes sense
   const isBetween = compare === '<=>'
 
   if (explicitlyDefined && isBetween && isValue && !isMin && !isMax)
@@ -106,18 +106,18 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
   else if (explicitlyDefined && !isBetween && !isValue)
     throw new Error(`A value is required to compare against ${compare}`)
 
-  //Reduce min and max to explicitly defined values, and order them accordingly.
-  //Handles cases where the range validator was called with arguments or an array
-  //expression, and they weren't put in order
+  // Reduce min and max to explicitly defined values, and order them accordingly.
+  // Handles cases where the range validator was called with arguments or an array
+  // expression, and they weren't put in order
   const numbers = (explicitlyDefined ? isBetween ? [min, max] : [value] : [min, value, max])
     .filter(v => is(v, Number))
     .sort(ascending)
 
-  //if the validator wasn't explicitly defined, it's possible for there to be three numbers in the array
+  // if the validator wasn't explicitly defined, it's possible for there to be three numbers in the array
   if (numbers.length === 3)
-    numbers.splice(1,1)
+    numbers.splice(1, 1)
 
-  //more checks to find invalid configurations that arn't explicitly defined
+  // more checks to find invalid configurations that arn't explicitly defined
   if (numbers.length === 0)
     throw new Error('Number value required.')
 
@@ -127,9 +127,9 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
   else if (numbers.length === 2 && !isBetween)
     throw new Error(`A value is required to compare against ${compare}`)
 
-  //msgFunc will return the msg defined by the schema creator, if one exists,
-  //or it will map to the defaultMsgs object defined by the vaidator creator, if one exists
-  //or it will map to the DEFAULT_MSGS object defined above
+  // msgFunc will return the msg defined by the schema creator, if one exists,
+  // or it will map to the defaultMsgs object defined by the vaidator creator, if one exists
+  // or it will map to the DEFAULT_MSGS object defined above
   const msgFunc = msg
     ? () => msg
     : defaultMsgs[compare]
@@ -139,27 +139,28 @@ export default function rangeValidatorFactory(configArgs, getValue = DEFAULT_GET
 
   const number = numbers[0]
 
-  //build the validator function
+  // build the validator function
   switch (compare) {
 
-  case '<=':
-    return factory(getValue, value => value <= number, msgFunc(number))
+    case '<=':
+      return factory(getValue, value => value <= number, msgFunc(number))
 
-  case '<':
-    return factory(getValue, value => value < number, msgFunc(number))
+    case '<':
+      return factory(getValue, value => value < number, msgFunc(number))
 
-  case '>':
-    return factory(getValue, value => value > number, msgFunc(number))
+    case '>':
+      return factory(getValue, value => value > number, msgFunc(number))
 
-  case '>=':
-    return factory(getValue, value => value >= number, msgFunc(number))
+    case '>=':
+      return factory(getValue, value => value >= number, msgFunc(number))
 
-  case '<=>':
-    //restructure min and max from the sanitized numbers array
-    [min, max] = numbers
-    return factory(getValue, value => value >= min && value <= max, msgFunc(min, max))
+    case '<=>':
+      // restructure min and max from the sanitized numbers array
+      [min, max] = numbers
+      return factory(getValue, value => value >= min && value <= max, msgFunc(min, max))
 
-  default:
-    throw new Error(`Invalid compare value. Must be one of: ${COMPARERS}`)
+    default:
+      throw new Error(`Invalid compare value. Must be one of: ${COMPARERS}`)
+
   }
 }

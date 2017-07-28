@@ -545,12 +545,12 @@ You can create your own functions to sanitize an validate data with the ```sanit
 
 const batmanify = () => {
 
-  //MUST be created out of higher-order functions.
-  //This example doesn't require any set up, it simply returns the actual method
+  // MUST be created out of higher-order functions.
+  // This example doesn't require any set up, it simply returns the actual method
   return value => {
 
-    //null or undefined values should be ignored by a sanitizer, by convention.
-    //If you'd like to give a property a default value, use the 'default' sanitizer.
+    // null or undefined values should be ignored by a sanitizer, by convention.
+    // If you'd like to give a property a default value, use the 'default' sanitizer.
     if (value == null)
       return value
 
@@ -606,16 +606,43 @@ new Schema({
 
 })
 
-//TODO: finish this example.
 ```
 
-## Using Hook Parameters
+### Accessible Property Info:
 
-If you intend for a custom validator or sanitizer to use parameters supplied by feathers you can do so by utilizing them in the methods second argument:
+Inside of a ```function(){}``` higher order function, here are the properties you
+Should be able to reference:
+
+``key``: The key of the property.
+``array``: True if this is an array property, false if not.
+``type``: The data type of this property. ``null`` if ANY.
+``parent``: A link to the parent property, if any.
+
+
+## Using Parameters
+
+If used serverside, your validate or sanitize function is provided with a number of parameters:
 
 ```js
-//TODO: finish this example.
+
+function customValidatorOrSanitizer () {
+
+  return (value, params) => { }
+                //^^^^
+}
+
 ```
+
+### Accessible Parameters:
+
+Inside of a ```function(){}``` higher order function, here are the properties you
+Should be able to reference:
+
+``id``: Id of the document currently being validated, if provided by the hook
+``method``: Hook method currently being executed: *create*, *patch*, or *update*
+``service``: Service object the document belongs to.
+``app``: Link to the feathers app.
+``data``: Data stored in hook.data.
 
 Its important that you handle the case of the parameters not being provided, otherwise
 your validator will break client-side.

@@ -31,8 +31,8 @@ const DEFAULT_HANDLERS = new Map()
 DEFAULT_HANDLERS.set(String, value => {
 
   return is(value, Object) && 'toString' in value
-     ? value.toString()
-     : String(value)
+    ? value.toString()
+    : String(value)
 
 })
 
@@ -102,7 +102,7 @@ export { ALL, ANY, ObjectId, Buffer }
 
 export const DEFAULT = DEFAULT_TYPES
 
-export function setCustom(type, method) {
+export function setCustom (type, method) {
 
   if (!is(type, Function))
     throw new Error('type argument must be a constructor.')
@@ -116,7 +116,7 @@ export function setCustom(type, method) {
   methods.set(type, method)
 }
 
-export function resetToDefault() {
+export function resetToDefault () {
 
   ALL.length = 0
 
@@ -132,11 +132,11 @@ export function resetToDefault() {
 
 }
 
-export function name(type) {
+export function name (type) {
   return type === ANY ? 'ANY' : type.name
 }
 
-export function assert(type, ...validTypes) {
+export function assert (type, ...validTypes) {
 
   for (const validType of validTypes)
     if (!ALL.includes(validType))
@@ -146,7 +146,7 @@ export function assert(type, ...validTypes) {
     throw new Error(`Expected type: ${validTypes.map(validType => name(validType))}`)
 }
 
-export function check(input, type, asArray) {
+export function check (input, type, asArray) {
 
   if (!ALL.includes(type))
     throw new Error('invalid type argument.')
@@ -167,40 +167,40 @@ export function check(input, type, asArray) {
   for (let i = 0; i < values.length; i++) {
 
     const value = values[i]
-
+    /* eslint-disable indent */
     const error = is(value, Symbol)
       ? 'Cannot store a Symbol as a value.'
 
-      //Neither can functions
+      // Neither can functions
       : is(value, Function)
       ? 'Cannot store a Function as a value.'
 
-      //Nor should NaN
+      // Nor should NaN
       : Number.isNaN(value)
       ? 'Cannot store NaN as a value.'
 
-      //values of type Object should only apply for plain objects
+      // values of type Object should only apply for plain objects
       : type === Object && isDefined && !is.plainObject(value)
       ? `Expected ${asArray ? 'array of plain objects.' : 'a plain object.'}`
 
-      //A typed value can equal null, meaning that it is optional. If a value
-      //isn't null, and isn't of the type specified, it shouldn't pass validation
+      // A typed value can equal null, meaning that it is optional. If a value
+      // isn't null, and isn't of the type specified, it shouldn't pass validation
       : isExplicit && !is(value, type)
       ? `Expected ${asArray ? 'array of ' : ''}${name(type)}${asArray ? 's' : ''}.`
 
-      //All remaining values either fit their type or are elligable for 'ANY'
+      // All remaining values either fit their type or are elligable for 'ANY'
       : false
 
     if (error)
       return error
 
   }
+  /* eslint-enable indent */
 
   return false
 
 }
-
-export function cast(input, type, asArray) {
+export function cast (input, type, asArray) {
 
   if (!ALL.includes(type))
     throw new Error('invalid type argument.')
@@ -212,12 +212,12 @@ export function cast(input, type, asArray) {
 
   for (const value of values) {
 
-    //empty values, or values that shouldn't be cast at all, are returned as a null
+    // empty values, or values that shouldn't be cast at all, are returned as a null
     if (!is(value) || value === '' || is(value, Symbol, Function) || Number.isNaN(value))
       continue
 
-    //If the value is already of the type specified, the value is considered casted.
-    //Does not apply if type is Object, because this would ruin custom types.
+    // If the value is already of the type specified, the value is considered casted.
+    // Does not apply if type is Object, because this would ruin custom types.
     if (type !== Object && (type === ANY || is(value, type))) {
       output.push(value)
       continue
@@ -226,16 +226,16 @@ export function cast(input, type, asArray) {
     try {
       const casted = methods.get(type)(value)
 
-      //in case of a custom cast, we have to check to ensure the value
-      //is actually of the type it's supposed to cast, and also ensure
-      //it didn't result in an empty string, which should be cast to null
+      // in case of a custom cast, we have to check to ensure the value
+      // is actually of the type it's supposed to cast, and also ensure
+      // it didn't result in an empty string, which should be cast to null
       if (is(casted, type) && casted !== '')
         output.push(casted)
 
-    } catch (err) {} //eslint-disable-line no-empty
+    } catch (err) {} // eslint-disable-line no-empty
   }
 
-  //whats this spaghetti? it satisfies all the edge cases:
+  // Whats this spaghetti? it satisfies all the edge cases:
   // asArray / input  /  sanitize  /  output
   // yes       null   => []        => null
   // yes       []     => []        => []

@@ -1,13 +1,12 @@
 
 import Schema, { types } from '../../src'
-import { assert  } from 'chai'
+import { assert } from 'chai'
 import is from 'is-explicit'
 import ObjectId from 'bson-objectid'
 
-
 /* global describe it */
 
-function createValidator(obj, key = 'prop') {
+function createValidator (obj, key = 'prop') {
   const schema = new Schema(obj)
   const property = schema.properties[key]
 
@@ -18,7 +17,7 @@ function createValidator(obj, key = 'prop') {
   return validator
 }
 
-function createSanitizer(obj, key = 'prop') {
+function createSanitizer (obj, key = 'prop') {
   const schema = new Schema(obj)
   const property = schema.properties[key]
 
@@ -29,6 +28,7 @@ function createSanitizer(obj, key = 'prop') {
   return sanitizer
 }
 
+/* eslint-disable */
 const stringify = val => is(val, Symbol) ? `:${val.toString()}` :
   is(val, Buffer) ? `<${[...val.values()]}>` :
   val === '' ? 'empty string' :
@@ -39,32 +39,32 @@ const stringify = val => is(val, Symbol) ? `:${val.toString()}` :
   is(val, Date) ? `|${val.toString()}|` :
   is(val, Object) ? `{${Object.keys(val)}}` :
   val
+/* eslint-enable */
 
 const validatorResult = val => val ? 'FAIL' : 'PASS'
 
-async function testValidator(validator, value, expected) {
+async function testValidator (validator, value, expected) {
 
   const passOrFail = await validator(value)
   assert.equal(validatorResult(passOrFail), validatorResult(expected))
 }
 
-async function testSanitizer(sanitizer, value, expected) {
+async function testSanitizer (sanitizer, value, expected) {
 
   const sanitized = await sanitizer(value)
   assert.deepEqual(sanitized, expected)
 }
 
+async function equivalentValidatorOutput (v1, v2) {
 
-async function equivalentValidatorOutput(v1, v2) {
-
-  return Promise.all(['string', null, undefined, 10, {}, [{}], [], ['string'], [100], true, [false], Symbol(), [Symbol()], Infinity,  NaN]
+  return Promise.all(['string', null, undefined, 10, {}, [{}], [], ['string'], [100], true, [false], Symbol('1'), [Symbol('2')], Infinity, NaN]
     .map(async value => {
       const r1 = await v1(value)
       const r2 = await v2(value)
 
       assert.equal(v1.type, v2.type)
 
-      return assert.deepEqual(r1,r2)
+      return assert.deepEqual(r1, r2)
     }))
 
 }
@@ -90,7 +90,6 @@ describe('Property Definitions', () => {
       const plain = createValidator({ prop: { type: Number } })
       return equivalentValidatorOutput(original, plain)
     })
-
 
   })
 
@@ -154,8 +153,8 @@ describe('Property Definitions', () => {
   })
 
   const TYPE_TEST_VALUES = ['foobar', '1337', '587eaa7cb4a64418e292c771', 'Tue Jan 17 2017 15:36:28 GMT-0800 (PST)', '', 0, Infinity, NaN, -Infinity,
-    true, new Date(), new Buffer([0x00]), Buffer.from('foobar'),{ foo: true, bar: false}, [], [1], ['rando','string'], new ObjectId(), function(){},
-    Symbol(), null, undefined]
+    true, new Date(), Buffer.from([0x00]), Buffer.from('foobar'), { foo: true, bar: false }, [], [1], ['rando', 'string'], new ObjectId(), function () {},
+    Symbol('1'), null, undefined]
 
   const expectedValidatorResult = (value, type) => {
 

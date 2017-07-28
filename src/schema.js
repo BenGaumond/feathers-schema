@@ -1,7 +1,7 @@
 import { array } from './helper'
 import { populateWithSchema, sanitizeWithSchema, validateWithSchema } from './hooks'
 
-import * as sanitizers  from './sanitizers'
+import * as sanitizers from './sanitizers'
 import * as validators from './validators'
 
 import { ALL, DEFAULT, ANY, cast, check, name } from './types'
@@ -19,7 +19,7 @@ const fixKeysUnderscore = obj => Object
   .map(fixKeyUnderscore)
 
 const spreadable = {
-  *[Symbol.iterator]() {
+  * [Symbol.iterator] () {
     for (const key in this)
       yield this[key]
   }
@@ -49,7 +49,7 @@ const PARENT = Symbol('parent')
 
 class PropertyBase {
 
-  addProperty(input, key, Type = this.constructor) {
+  addProperty (input, key, Type = this.constructor) {
 
     if (!is.plainObject(this.properties))
       this.properties = { ...spreadable }
@@ -59,7 +59,9 @@ class PropertyBase {
 
     const parent = is(this, Schema) ? null : this
 
-    return this.properties[key] = new Type(input, key, parent)
+    const property = this.properties[key] = new Type(input, key, parent)
+
+    return property
 
   }
 
@@ -71,7 +73,7 @@ class PropertyBase {
 // Property Class Private Danglers
 /******************************************************************************/
 
-function addCustom(defs, key, arr) {
+function addCustom (defs, key, arr) {
 
   if (key in defs === false)
     return
@@ -79,7 +81,7 @@ function addCustom(defs, key, arr) {
   const def = defs[key]
   const factories = array(def)
 
-  for (const factory of factories) {
+  for (const factory of factories)
     try {
 
       const func = factory.call(this, def)
@@ -95,13 +97,13 @@ function addCustom(defs, key, arr) {
       throw err
 
     }
-  }
+
 }
 
-function addStock(def, stock, arr) {
+function addStock (def, stock, arr) {
   for (const stockkey in stock) {
 
-    //remove underscores from stock keys, such as in _default
+    // remove underscores from stock keys, such as in _default
     const key = fixKeyUnderscore(stockkey)
 
     if (key in def) {
@@ -112,7 +114,7 @@ function addStock(def, stock, arr) {
   }
 }
 
-function copyDefinition(definition) {
+function copyDefinition (definition) {
 
   if (!is.plainObject(definition))
     return definition
@@ -123,37 +125,37 @@ function copyDefinition(definition) {
     const value = definition[key]
 
     copy[key] = is(value, Array)
-       ? value.map(v => copyDefinition(v))
+      ? value.map(v => copyDefinition(v))
 
-       : copyDefinition(value)
+      : copyDefinition(value)
   }
 
   return copy
 }
 
-function applyDefinition(definition) {
+function applyDefinition (definition) {
 
-  //we store the definition property so that it can be used when composing schemas
+  // we store the definition property so that it can be used when composing schemas
   this[DEFINITION] = array(definition, this.array)
 
-  //Why copy a definition?
-  //If a schema is nested, it's properties will be rebuilt into the parent
-  //schema using their definitions. It's possible for sanitizers or validators
-  //to mutate the definition in the process of creating methods, so to ensure
-  //we dont damage the definition for future schemas to use when nesting, we
-  //create a copy for the s&vs to play with.
+  // Why copy a definition?
+  // If a schema is nested, it's properties will be rebuilt into the parent
+  // schema using their definitions. It's possible for sanitizers or validators
+  // to mutate the definition in the process of creating methods, so to ensure
+  // we dont damage the definition for future schemas to use when nesting, we
+  // create a copy for the s&vs to play with.
   const mutableDefinition = copyDefinition(definition)
 
   addStock.call(this, mutableDefinition, validators, this.validators)
   addCustom.call(this, mutableDefinition, 'validates', this.validators)
   addCustom.call(this, mutableDefinition, 'validate', this.validators)
 
-  //get stock and custom sanitizer
+  // get stock and custom sanitizer
   addStock.call(this, mutableDefinition, sanitizers, this.sanitizers)
   addCustom.call(this, mutableDefinition, 'sanitizes', this.sanitizers)
   addCustom.call(this, mutableDefinition, 'sanitize', this.sanitizers)
 
-  //Determin sub properties
+  // Determin sub properties
   const subProperties = { }
 
   for (const key in mutableDefinition)
@@ -164,13 +166,13 @@ function applyDefinition(definition) {
     return
 
   for (const key in subProperties)
-    //the fixKeyAtSymbol() is important here, because it allows the use of reserved property
-    //keys as property names. eg: { '@type': "value" } becomes { type: "value"}
+    // the fixKeyAtSymbol() is important here, because it allows the use of reserved property
+    // keys as property names. eg: { '@type': "value" } becomes { type: "value"}
     this.addProperty(subProperties[key], fixKeyAtSymbol(key))
 
 }
 
-function applyNestedProperties(input) {
+function applyNestedProperties (input) {
 
   if (is(input, Property)) {
     this.type = input.type
@@ -180,7 +182,7 @@ function applyNestedProperties(input) {
     this.type = Object
     this[DEFINITION] = input
 
-    for(const property of input.properties)
+    for (const property of input.properties)
       this.addProperty(property[DEFINITION], property.key)
 
   } else throw new Error('Problem applying nested properties.')
@@ -194,7 +196,7 @@ function applyNestedProperties(input) {
 export class Property extends PropertyBase {
 
   // the constructor of a property parses the input for that property
-  constructor(input, key, parent = null) {
+  constructor (input, key, parent = null) {
     super()
 
     if (parent !== null && !is(parent, PropertyBase))
@@ -203,9 +205,9 @@ export class Property extends PropertyBase {
     this.key = key
     this[PARENT] = parent
 
-    //Determine if array
+    // Determine if array
     this.array = is(input, Array)
-    //if an empty array was supplied, the rest of the definition is pretty simple
+    // if an empty array was supplied, the rest of the definition is pretty simple
     if (this.array && input.length === 0)
       input = { type: ANY }
 
@@ -215,8 +217,8 @@ export class Property extends PropertyBase {
     else if (this.array)
       input = input[0]
 
-    //Determin type
-    //schemas and properties should be composable
+    // Determin type
+    // schemas and properties should be composable
     if (is(input, PropertyBase))
       return applyNestedProperties.call(this, input)
 
@@ -226,8 +228,8 @@ export class Property extends PropertyBase {
     if (!is.plainObject(input))
       throw new Error('Malformed property: Could not convert to Type notation.')
 
-    //try to get type from shortcut type notation, eg:
-    //property: { String } insteadof property: { type: String }
+    // try to get type from shortcut type notation, eg:
+    // property: { String } insteadof property: { type: String }
     if ('type' in input === false) for (const type of DEFAULT) {
       const key = name(type)
 
@@ -235,8 +237,8 @@ export class Property extends PropertyBase {
       if (!hasShortCut)
         continue
 
-      //if we've gotten here, there are multiple shortcut properties eg:
-      //property: { String, Number, ANY }
+      // if we've gotten here, there are multiple shortcut properties eg:
+      // property: { String, Number, ANY }
       if (input.type || input.type === ANY)
         throw new Error(`Multiple types defined: ${name(input.type)}`)
 
@@ -244,8 +246,8 @@ export class Property extends PropertyBase {
       delete input[key]
     }
 
-    //if we've gotten here, but still dont have a type defined, then it must be an
-    //object.
+    // if we've gotten here, but still dont have a type defined, then it must be an
+    // object.
     if ('type' in input === false)
       input.type = Object
 
@@ -256,7 +258,7 @@ export class Property extends PropertyBase {
     applyDefinition.call(this, input)
   }
 
-  addProperty(input, key) {
+  addProperty (input, key) {
     if (this.type !== Object)
       throw new Error('Cannot nest properties inside of a property that isn\'t a plain object.')
 
@@ -264,21 +266,21 @@ export class Property extends PropertyBase {
 
   }
 
-  async sanitize(input, params) {
+  async sanitize (input, params) {
 
     let values = cast(input, this.type, this.array)
 
-    //run all the sanitizers on this property
+    // run all the sanitizers on this property
     for (const sanitizer of this.sanitizers)
       values = await sanitizer(values, params)
 
-    //if sanitization returned a null value, we don't need to continue
+    // if sanitization returned a null value, we don't need to continue
     if (!is(values))
       return values
 
     values = array(values)
 
-    //run the sanitiers for sub properties, if there are any
+    // run the sanitiers for sub properties, if there are any
     if (this.properties) for (let i = 0; i < values.length; i++) {
       const value = values[i]
 
@@ -286,9 +288,9 @@ export class Property extends PropertyBase {
       if (!is.plainObject(value))
         continue
 
-      //We create a seperate object for the sanitized data, so that
-      //this method doesn't return an object with any properties that
-      //arn't defined by it's sub-properties
+      // We create a seperate object for the sanitized data, so that
+      // this method doesn't return an object with any properties that
+      // arn't defined by it's sub-properties
       const sanitized = {}
 
       for (const property of this.properties) {
@@ -300,27 +302,27 @@ export class Property extends PropertyBase {
       values[i] = sanitized
     }
 
-    //only return an array if this is an array property
+    // only return an array if this is an array property
     return array.unwrap(values, !this.array)
   }
 
-  async validate(value, params) {
+  async validate (value, params) {
 
     let results = check(value, this.type, this.array)
     if (results)
       return results
 
-    //if we passed type checking, we run each of the validators on the value
+    // if we passed type checking, we run each of the validators on the value
     for (const validator of this.validators) {
       results = await validator(value, params)
 
-      //if the validator failed, we don't need to continue
+      // if the validator failed, we don't need to continue
       if (results)
         return results
     }
 
-    //if we've gotten here, there are no sub properties, or the object wasn't
-    //initialized. As such, sub properties don't need to be validated if they don't exist.
+    // if we've gotten here, there are no sub properties, or the object wasn't
+    // initialized. As such, sub properties don't need to be validated if they don't exist.
     if (!this.properties || value === null)
       return results
 
@@ -339,8 +341,8 @@ export class Property extends PropertyBase {
         if (!keyResult)
           continue
 
-        //ensure result is an object before filling the errors of this values
-        //sub properties
+        // ensure result is an object before filling the errors of this values
+        // sub properties
         result = result || {}
         result[key] = keyResult
 
@@ -351,11 +353,11 @@ export class Property extends PropertyBase {
 
     return this.array
 
-      //if this is an array value, we only send back an array of results if any of the
-      //results are truthy; truthy == fail
+      // if this is an array value, we only send back an array of results if any of the
+      // results are truthy; truthy == fail
       ? results.some(result => result) ? results : false
 
-      //otherwise the first result in results will be the result of the singular type check
+      // otherwise the first result in results will be the result of the singular type check
       : results[0]
 
   }
@@ -380,14 +382,14 @@ export class Property extends PropertyBase {
 
 export default class Schema extends PropertyBase {
 
-  constructor(inputs, options) {
+  constructor (inputs, options) {
     super()
 
-    //Check options
+    // Check options
     if (is(options) && !is.plainObject(options))
       throw new Error('options, if supplied, are expected to be a plain object.')
 
-    this.options = { ...DEFAULT_OPTIONS, ...(options || {})}
+    this.options = { ...DEFAULT_OPTIONS, ...(options || {}) }
 
     if (is(this.options.canSkipValidation, Boolean)) {
       const canSkip = this.options.canSkipValidation
@@ -397,30 +399,30 @@ export default class Schema extends PropertyBase {
     if (!is(this.options.canSkipValidation, Function))
       throw new Error('Schema options.canSkipValidation is expected to be a boolean or a predicate function.')
 
-    //Create properties
+    // Create properties
     if (!is.plainObject(inputs))
       throw new Error('A schema must be created with a plain inputs object.')
 
     for (const key in inputs)
-      //the fixKeyAtSymbol() is important here, because it allows the use of reserved property
-      //keys as property names. eg: { '@type': "value" } becomes { type: "value"}
+      // the fixKeyAtSymbol() is important here, because it allows the use of reserved property
+      // keys as property names. eg: { '@type': "value" } becomes { type: "value"}
       this.addProperty(inputs[key], fixKeyAtSymbol(key))
 
     if (this.properties === null)
       throw new Error('Schema was created with no properties.')
 
-    //Build Hooks
+    // Build Hooks
     this.hooks.populate = populateWithSchema(this)
     this.hooks.validate = validateWithSchema(this)
     this.hooks.sanitize = sanitizeWithSchema(this)
 
   }
 
-  addProperty(input, key) {
+  addProperty (input, key) {
     super.addProperty(input, key, Property)
   }
 
-  async sanitize(data, params = {}) {
+  async sanitize (data, params = {}) {
 
     if (!is.plainObject(data))
       throw new Error('sanitize expects a plain object as data for its first argument.')
@@ -428,9 +430,9 @@ export default class Schema extends PropertyBase {
     if (!is.plainObject(params))
       throw new Error('if provided, sanitize\'s second argument must be a plain object to be used as sanitize parameters.')
 
-    //the params object should always have the entirety of the data being sanitized.
-    //this way it can be used by custom sanitize methods weather the schema is
-    //being used client or server-side
+    // the params object should always have the entirety of the data being sanitized.
+    // this way it can be used by custom sanitize methods weather the schema is
+    // being used client or server-side
     params.data = data
 
     const sanitized = {}
@@ -447,7 +449,7 @@ export default class Schema extends PropertyBase {
 
   }
 
-  async validate(data, params = {}) {
+  async validate (data, params = {}) {
 
     if (!is.plainObject(data))
       throw new Error('validate expects a plain object as data for its first argument.')
@@ -457,9 +459,9 @@ export default class Schema extends PropertyBase {
 
     let errors = false
 
-    //the params object should always have the entirety of the data being validated.
-    //this way it can be used by custom validate methods weather the schema is
-    //being used client or server-side
+    // the params object should always have the entirety of the data being validated.
+    // this way it can be used by custom validate methods weather the schema is
+    // being used client or server-side
     params.data = data
 
     for (const property of this.properties) {
@@ -468,13 +470,13 @@ export default class Schema extends PropertyBase {
 
       const result = await property.validate(data[key], params)
 
-      //falsy results mean validation passed
+      // falsy results mean validation passed
       if (!result)
         continue
 
-      //if we've gotten here, it means a validator has failed. First we ensure
-      //the errors variable is casted to an object, then we set the validator
-      //results inside of it
+      // if we've gotten here, it means a validator has failed. First we ensure
+      // the errors variable is casted to an object, then we set the validator
+      // results inside of it
       errors = errors || {}
       errors[key] = result
     }

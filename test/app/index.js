@@ -11,7 +11,7 @@ const HOST = 'localhost'
 
 export default class App {
 
-  constructor() {
+  constructor () {
     this.feathers = feathers()
       .use(bodyParser.json())
       .use(bodyParser.urlencoded({ extended: true }))
@@ -25,9 +25,9 @@ export default class App {
     if (this.server)
       return
 
-    return new Promise(res => {
+    return new Promise(resolve => {
       this.server = this.feathers.listen(PORT, HOST)
-      this.server.once('listening', res)
+      this.server.once('listening', resolve)
     })
 
   }
@@ -42,11 +42,11 @@ export default class App {
     if (!this.server)
       return
 
-    return new Promise(res => {
+    return new Promise(resolve => {
       this.server.close()
       this.server.once('close', () => {
         this.server = null
-        res()
+        resolve()
       })
     })
   }

@@ -25,7 +25,7 @@ describe('Stock General Sanitizers', () => {
       return Promise
         .all(['Kelly', NaN, 'Robert', 'Steve', null, 'Candice']
           .map(value => testSchema(schema, value, value || def)
-        ))
+          ))
     })
 
     it('takes a \'value\' config, which can be of its property type or a function that returns a value', async () => {
@@ -39,7 +39,7 @@ describe('Stock General Sanitizers', () => {
 
       await schemaShouldThrow({
         type: String,
-        default: { wrongKey: 'Foobar'}
+        default: { wrongKey: 'Foobar' }
       })
 
       await schemaShouldNotThrow({
@@ -63,7 +63,7 @@ describe('Stock General Sanitizers', () => {
 
     it('handles arrays', async () => {
 
-      const def = [0,1,2,3,4]
+      const def = [0, 1, 2, 3, 4]
 
       const schema = createSinglePropertySchema([{
         type: Number,
@@ -90,16 +90,16 @@ describe('Stock General Sanitizers', () => {
       const schema = new Schema({
 
         name: {
-          first: { String, default: 'Jane'},
-          last: { String, default: 'Doe'},
-          default: () => new Object()
+          first: { String, default: 'Jane' },
+          last: { String, default: 'Doe' },
+          default: () => { return {} }
         }
 
       })
 
       const results = await schema.sanitize({})
 
-      assert.deepEqual(results, { name: { first: 'Jane', last: 'Doe' }})
+      assert.deepEqual(results, { name: { first: 'Jane', last: 'Doe' } })
 
     })
   })
@@ -119,7 +119,7 @@ describe('Stock String Sanitizers', () => {
       return Promise
         .all(['CASE', 'FooBar', '!@#$%^', '102031']
           .map(value => testSchema(schema, value, value.toLowerCase())
-        ))
+          ))
 
     })
 
@@ -153,7 +153,7 @@ describe('Stock String Sanitizers', () => {
       return Promise
         .all(['case', 'foobar', '!@#$%^', '102031']
           .map(value => testSchema(schema, value, value.toUpperCase())
-        ))
+          ))
 
     })
 
@@ -186,7 +186,7 @@ describe('Stock String Sanitizers', () => {
       return Promise
         .all(['  case ', '  foobar \n', ' !@#$%^ ', ' 102031']
           .map(value => testSchema(schema, value, value.trim())
-        ))
+          ))
 
     })
 
@@ -194,7 +194,6 @@ describe('Stock String Sanitizers', () => {
       await schemaShouldThrow({type: Number, trim: true})
       return schemaShouldNotThrow({type: String, trim: true})
     })
-
 
     it('handles arrays', async () => {
       const schema = createSinglePropertySchema([{

@@ -4,7 +4,7 @@ import is from 'is-explicit'
 
 const PASS = false
 
-export function range(...config) {
+export function range (...config) {
 
   assert(this.type, Number)
 
@@ -12,12 +12,12 @@ export function range(...config) {
 
 }
 
-export function even(...config) {
+export function even (...config) {
 
   assert(this.type, Number)
 
   const { msg } = parseConfig(config, {
-    msg: { type: String, default: 'Must be even.'}
+    msg: { type: String, default: 'Must be even.' }
   })
 
   return input => {
@@ -29,18 +29,18 @@ export function even(...config) {
 
     return array.unwrap(
       results,
-      !this.array || results.every(result => result == PASS)
+      !this.array || results.every(result => !result)
     )
 
   }
 }
 
-export function odd(...config) {
+export function odd (...config) {
 
   assert(this.type, Number)
 
   const { msg } = parseConfig(config, {
-    msg: { type: String, default: 'Must be odd.'}
+    msg: { type: String, default: 'Must be odd.' }
   })
 
   return input => {
@@ -52,7 +52,7 @@ export function odd(...config) {
 
     return array.unwrap(
       results,
-      !this.array || results.every(result => result == PASS)
+      !this.array || results.every(result => !result)
     )
   }
 }

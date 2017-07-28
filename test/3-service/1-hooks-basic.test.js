@@ -4,12 +4,12 @@ import memory from 'feathers-memory'
 import { assert } from 'chai'
 
 /* global describe it before after */
-//configure messages service
+// configure messages service
 
 import Schema from '../../src'
 // import ObjectId from 'bson-objectid'
 
-const trim = true, alphanumeric = true, required = true
+const trim = true, alphanumeric = true, required = true // eslint-disable-line
 
 const messageSchema = new Schema({
 
@@ -57,7 +57,7 @@ describe('Hooks', () => {
       await app.start()
 
       messages.before({
-        patch:[
+        patch: [
           messageSchema.hooks.populate,
           hook => { populatedData = hook.data }
         ],
@@ -79,7 +79,7 @@ describe('Hooks', () => {
 
       try {
 
-        await messages.patch(id, { body: 'Message has been patched.'})
+        await messages.patch(id, { body: 'Message has been patched.' })
 
       } catch (err) {
         throw err
@@ -94,7 +94,7 @@ describe('Hooks', () => {
 
       let authorError
       try {
-        await messages.update(id, { body: 'Message has been updated.'})
+        await messages.update(id, { body: 'Message has been updated.' })
       } catch (err) {
         authorError = err.errors.author
       }
@@ -118,7 +118,7 @@ describe('Hooks', () => {
         all: pop
       })
 
-      const run = async (method, id, expected)=> {
+      const run = async (method, id, expected) => {
 
         const args = id instanceof Array ? id : [id]
 
@@ -145,7 +145,7 @@ describe('Hooks', () => {
 
     })
 
-    after(async () => await app.end())
+    after(async () => app.end())
 
   })
 
@@ -161,7 +161,7 @@ describe('Hooks', () => {
       await app.start()
 
       messages.before({
-        create:[
+        create: [
           messageSchema.hooks.sanitize,
           hook => { sanitizedData = hook.data }
         ]
@@ -202,7 +202,7 @@ describe('Hooks', () => {
         all: san
       })
 
-      const run = async (method, id, expected)=> {
+      const run = async (method, id, expected) => {
 
         const args = id instanceof Array ? id : [id]
 
@@ -229,7 +229,7 @@ describe('Hooks', () => {
 
     })
 
-    after(async () => await app.end())
+    after(async () => app.end())
 
   })
 
@@ -290,7 +290,7 @@ describe('Hooks', () => {
         all: val
       })
 
-      const run = async (method, id, expected)=> {
+      const run = async (method, id, expected) => {
 
         const args = id instanceof Array ? id : [id]
 
@@ -317,7 +317,7 @@ describe('Hooks', () => {
 
     })
 
-    after(async () => await app.end())
+    after(async () => app.end())
 
   })
 
@@ -330,7 +330,7 @@ describe('Hooks', () => {
       let errors
       let results
 
-      const createData = Array.from({length: 20}, (v,i) => Object({ body: `Message ${i}`, author: `Author${i}`, scores: [0] }))
+      const createData = Array.from({length: 20}, (v, i) => Object({ body: `Message ${i}`, author: `Author${i}`, scores: [0] }))
 
       try {
         results = await messages.create(createData)
@@ -358,22 +358,22 @@ describe('Hooks', () => {
     it('allows manual create ids', async () => {
 
       const id = 42919
-      const doc = await messages.create({ body: 'Whatever', author: 'Ben', scores: [1,2,3], id })
+      const doc = await messages.create({ body: 'Whatever', author: 'Ben', scores: [1, 2, 3], id })
 
       assert.equal(doc.id, id, ' Ids should be equal')
     })
 
     it('allow properties to be cleared', async () => {
 
-      let doc = await messages.create({ body: 'Very good', author: 'Jeeves', scores: [0], meta: { keywords: 'one', location: 'canada'} })
+      let doc = await messages.create({ body: 'Very good', author: 'Jeeves', scores: [0], meta: { keywords: 'one', location: 'canada' } })
 
-      doc = await messages.patch(doc.id, { meta: { keywords: '', location: 'usa' }})
+      doc = await messages.patch(doc.id, { meta: { keywords: '', location: 'usa' } })
 
-      assert.deepEqual(doc.meta, { keywords: null, location: 'usa'})
+      assert.deepEqual(doc.meta, { keywords: null, location: 'usa' })
 
     })
 
-    after(async () => await app.end())
+    after(async () => app.end())
 
   })
 

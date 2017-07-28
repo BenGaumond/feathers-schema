@@ -2,17 +2,17 @@ import { parseConfig, array } from '../helper'
 import { name, assert, ObjectId } from '../types'
 import is from 'is-explicit'
 
-//TODO parse sanitizer. Parse sanizer will only invoke when a value doesn't
-//pass type casting. It'll take a function that takes an invalid value and allow
-//users to convert it. As of NOW, all values pass type casting, uncastable ones
-//reduced to null, which is a legal value (unless using the required validator)
-//I'll change that behaviour before implenting parse()
+// TODO parse sanitizer. Parse sanizer will only invoke when a value doesn't
+// pass type casting. It'll take a function that takes an invalid value and allow
+// users to convert it. As of NOW, all values pass type casting, uncastable ones
+// reduced to null, which is a legal value (unless using the required validator)
+// I'll change that behaviour before implenting parse()
 // export function parse() {}
 
-export function _default(...config) {
+export function _default (...config) {
 
   let { value } = parseConfig(config, {
-    value: { type: [Function, this.array ? Array : this.type ], required: true }
+    value: { type: [ Function, this.array ? Array : this.type ], required: true }
   })
 
   value = array(value, this.array)
@@ -27,23 +27,23 @@ export function _default(...config) {
     ? value
     : () => value
 
-  return async (input, params) => !is(input) || is(input, Array) && input.length === 0
-    ? await getDefault(params)
+  return async (input, params) => !is(input) || (is(input, Array) && input.length === 0)
+    ? getDefault(params)
     : input
 
 }
 
-export function service(...config) {
+export function service (...config) {
 
   const { name } = parseConfig(config, {
     name: { type: String, required: true }
   })
 
-  //service validator can only be used with types than can be used as an id
+  // service validator can only be used with types than can be used as an id
   assert(this.type, String, ObjectId, Number)
 
-  //we need a special indexOf function to test for existence of ids,
-  //because ObjectId's wont pass the standard array.indexOf test
+  // we need a special indexOf function to test for existence of ids,
+  // because ObjectId's wont pass the standard array.indexOf test
   const indexOf = (id, arr) => {
 
     if (!this.type.prototype.equals)
@@ -58,10 +58,10 @@ export function service(...config) {
 
   return async (input, { app }) => {
 
-    //Undefined values pass.
-    //Also, this sanitizer depends on access to server parameters.
-    //if this validator is being run client side, they wont exist.
-    //In that case, this sanitizer wont mutate the input.
+    // Undefined values pass.
+    // Also, this sanitizer depends on access to server parameters.
+    // if this validator is being run client side, they wont exist.
+    // In that case, this sanitizer wont mutate the input.
     if (!is(input) || !is(app, Object))
       return input
 
@@ -73,22 +73,23 @@ export function service(...config) {
 
     const docs = await service.find({query})
 
-    const all = docs.map(doc => doc[service.id]),
-      output = []
+    const all = docs.map(doc => doc[service.id])
+
+    const output = []
 
     for (const id of ids) {
       const i = indexOf(id, all)
       if (i < 0)
         continue
 
-      //remove the id from the all array, speeding up the process and
-      //preventing duplicates
+      // remove the id from the all array, speeding up the process and
+      // preventing duplicates
       all.splice(i, 1)
 
       output.push(id)
     }
 
-    //only return an array if this is an array property
+    // only return an array if this is an array property
     return array.unwrap(output, !this.array)
   }
 

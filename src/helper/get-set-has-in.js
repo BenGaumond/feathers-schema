@@ -3,7 +3,7 @@ import is from 'is-explicit'
 const $HAS = Symbol('path-exists')
 const $GET = Symbol('path-value')
 
-function smartIn(obj, paths, smart) {
+function smartIn (obj, paths, smart) {
 
   if (!is(obj, Object))
     throw new Error('expects an object as first argument.')
@@ -25,28 +25,28 @@ function smartIn(obj, paths, smart) {
 
     if (i === final)
       return has ? path in obj
-           : get ? obj[path]
-           :/*set*/void (obj[path] = smart)
+          : get ? obj[path]                               // eslint-disable-line
+          :/* set */void (obj[path] = smart)
 
     if (!is(obj[path], Object))
       if (set)
         obj[path] = {}
       else
         return has ? false
-             :/*get*/undefined
+          :/* get */undefined
 
     obj = obj[path]
   }
 }
 
-export function setIn(obj, paths, value) {
+export function setIn (obj, paths, value) {
   smartIn(obj, paths, value)
 }
 
-export function getIn(obj, paths) {
+export function getIn (obj, paths) {
   return smartIn(obj, paths, $GET)
 }
 
-export function hasIn(obj, paths) {
+export function hasIn (obj, paths) {
   return smartIn(obj, paths, $HAS)
 }

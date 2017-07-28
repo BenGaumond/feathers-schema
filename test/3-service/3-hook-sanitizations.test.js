@@ -9,12 +9,12 @@ import Schema from '../../src'
 const required = true
 
 const author = new Schema({
-  name: { type: String, length: [0, 30]}
+  name: { type: String, length: [0, 30] }
 })
 
 const comment = new Schema({
-  body: { type: String, length: [0, 144]},
-  rating: { type: Number, range: [0,10] },
+  body: { type: String, length: [0, 144] },
+  rating: { type: Number, range: [0, 10] },
   author: {
     type: Number,
     service: 'authors',
@@ -71,7 +71,7 @@ describe('Stock Server Sanitizations', () => {
 
       await app.start()
 
-      //seed
+      // seed
       const authorDocs = await authors.create([
         { name: 'Rachel' },
         { name: 'Ben' },
@@ -103,7 +103,7 @@ describe('Stock Server Sanitizations', () => {
     })
 
     it('Requires a service name.', () => {
-      expect(() => new Schema({ author: { type: Number, service: true }}))
+      expect(() => new Schema({ author: { type: Number, service: true } }))
         .to.throw('name config property is required for this validator.')
     })
 
@@ -157,7 +157,7 @@ describe('Stock Server Sanitizations', () => {
           rating: 10
         },
         {
-          body: 'Long in the future after the reign of humanity has been'+
+          body: 'Long in the future after the reign of humanity has been' +
             ' reduced to ashes, Cats will reign supreme.',
           author: 3,
           rating: 10
@@ -175,7 +175,7 @@ describe('Stock Server Sanitizations', () => {
 
     })
 
-    after(async () => await app.end())
+    after(async () => app.end())
 
   })
 

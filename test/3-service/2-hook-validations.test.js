@@ -6,7 +6,7 @@ import { assert, expect } from 'chai'
 
 import Schema from '../../src'
 
-const unique = true, required = true, nospaces = true
+const unique = true, required = true, nospaces = true // eslint-disable-line
 
 const person = new Schema({
 
@@ -22,7 +22,7 @@ const person = new Schema({
 
   age: { type: Number, range: [ '>=', 0, 'Must be born.' ] },
 
-  SIN: { type: Number, required, unique: 'IMPOSTER!', range: [1000, 9999] },
+  SIN: { type: Number, required, unique: 'IMPOSTER!', range: [1000, 9999] }
 
 })
 
@@ -46,34 +46,34 @@ describe('Stock Server Validations', () => {
 
       await app.start()
 
-      //seed
+      // seed
       await service.create([
         {
           name: { first: 'John', last: 'Gravy', alias: 'Gravytrain' },
           gender: 'male',
           age: 40,
           SIN: 8720
-        },{
+        }, {
           name: { first: 'Aaron', last: 'Shall' },
           gender: 'male',
           age: 20,
           SIN: 2152
-        },{
+        }, {
           name: { first: 'Sharon', last: 'Rulen' },
           gender: 'female',
           age: 22,
           SIN: 2412
-        },{
+        }, {
           name: { first: 'Alice', last: 'Rulen' },
           gender: 'female',
           age: 24,
           SIN: 6457
-        },{
+        }, {
           name: { first: 'Chris', last: 'Brodie', alias: 'WuTang' },
           gender: 'male',
           age: 31,
           SIN: 3451
-        },{
+        }, {
           name: { first: 'Beatrix', last: 'Ferrul', alias: 'Bonny-Guns' },
           gender: 'male',
           age: 43,
@@ -86,28 +86,20 @@ describe('Stock Server Validations', () => {
     it('Cannot be placed in array properties, or descendents thereof', () => {
 
       const error = 'Currently, unique validators can\'t be placed on array properties, or descendants of array properties.'
-      expect(() => {
+      expect(() => new Schema({
+        comments: [{ name: { type: String, unique } }]
+      })).to.throw(error)
 
-        new Schema({
-          comments: [{ name: { type: String, unique }}]
-        })
-
-      }).to.throw(error)
-
-      expect(() => {
-
-        new Schema({
-          authors: [{
-            books: [String],
-            info: {
-              name: {
-                type: String, unique
-              }
+      expect(() => new Schema({
+        authors: [{
+          books: [String],
+          info: {
+            name: {
+              type: String, unique
             }
-          }]
-        })
-
-      }).to.throw(error)
+          }
+        }]
+      })).to.throw(error)
 
     })
 
@@ -138,7 +130,7 @@ describe('Stock Server Validations', () => {
         err = e.errors
       }
 
-      assert.deepEqual(err, { email: 'Must be unique.'})
+      assert.deepEqual(err, { email: 'Must be unique.' })
 
     })
 
@@ -183,10 +175,10 @@ describe('Stock Server Validations', () => {
       }
 
       assert(err, 'No error returned by query.')
-      assert.equal(err.SIN,'IMPOSTER!')
+      assert.equal(err.SIN, 'IMPOSTER!')
     })
 
-    after(async () => await app.end())
+    after(async () => app.end())
 
   })
 

@@ -5,7 +5,7 @@ import Schema from '../../src'
 
 /* global describe it */
 
-function compareProperties(a, b) {
+function compareProperties (a, b) {
 
   assert.deepEqual(Object.keys(a), Object.keys(b), 'Property keys do not match.')
 
@@ -13,7 +13,8 @@ function compareProperties(a, b) {
 
     const { key } = property
 
-    const ap = a[key], bp = b[key]
+    const ap = a[key]
+    const bp = b[key]
 
     assert.equal(ap.type, bp.type)
     assert.equal(ap.array, bp.array)
@@ -35,7 +36,7 @@ function compareProperties(a, b) {
 
 }
 
-const NotPlainObjects = ['string', 129, [], new function(){}, Array, true, null, undefined]
+const NotPlainObjects = ['string', 129, [], new function () {}(), Array, true, null, undefined]
 const Definition = { description: String }
 
 describe('Schema Class', () => {
@@ -64,7 +65,6 @@ describe('Schema Class', () => {
 
   })
 
-
   it('Optionally takes a plain object representing options as its second argument.', () => {
 
     expect(() => new Schema(Definition, {})).to.not.throw(Error)
@@ -81,7 +81,7 @@ describe('Schema Class', () => {
       .throw('Schema options.canSkipValidation is expected to be a boolean or a predicate function.');
 
     [() => false, true, false]
-      .forEach( canSkipValidation =>
+      .forEach(canSkipValidation =>
         expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
 

@@ -8,7 +8,7 @@ const EXPECTING_ARRAY = Symbol('expecting-array')
 // Helper
 /******************************************************************************/
 
-function valueValid(value, types, throwKey = null) {
+function valueValid (value, types, throwKey = null) {
 
   if (types.includes(ANY))
     return throwKey ? void 0 : true
@@ -23,14 +23,14 @@ function valueValid(value, types, throwKey = null) {
 
   else if (!valid)
     throw new Error(`${throwKey} is expected to be ${
-        types.length > 1 ? 'one of:' : 'a'
-      } ${
-        types.map(type => type.name)
-      }`)
+      types.length > 1 ? 'one of:' : 'a'
+    } ${
+      types.map(type => type.name)
+    }`)
 
 }
 
-function parseDetail(detail) {
+function parseDetail (detail) {
 
   if (!is.plainObject(detail))
     throw new Error('Malformed config detail object.')
@@ -41,7 +41,9 @@ function parseDetail(detail) {
 
   for (const key in detail) {
     const sub = detail[key]
-    let type = ANY, _default, required = false
+    let type = ANY
+    let _default
+    let required = false
 
     if (is.plainObject(sub)) {
 
@@ -54,7 +56,7 @@ function parseDetail(detail) {
 
     type = array(type)
 
-    if (!type.every( t => t === ANY || is(t, Function)))
+    if (!type.every(t => t === ANY || is(t, Function)))
       throw new Error(`detail type argument invalid: ${type}`)
 
     if (!parsed[EXPECTING_ARRAY] && type.includes(Array))
@@ -66,7 +68,7 @@ function parseDetail(detail) {
   return parsed
 }
 
-function containsArray(arr) {
+function containsArray (arr) {
 
   return array(arr).some(v => is(v, Array))
 
@@ -76,11 +78,11 @@ function containsArray(arr) {
 // Exports
 /******************************************************************************/
 
-export default function parseConfig(input, detail) {
+export default function parseConfig (input, detail) {
 
   detail = parseDetail(detail)
 
-  //reduce argument array down to a single value, long array or object
+  // reduce argument array down to a single value, long array or object
   while (is(input, Array) && input.length === 1)
     input = input[0]
 

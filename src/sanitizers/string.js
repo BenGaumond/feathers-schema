@@ -2,7 +2,7 @@ import { assert } from '../types'
 import { array } from '../helper'
 import is from 'is-explicit'
 
-function stringSanitizer(func) {
+function stringSanitizer (func) {
 
   assert(this.type, String)
 
@@ -17,20 +17,20 @@ function stringSanitizer(func) {
 
 }
 
-export function lowercase() {
+export function lowercase () {
 
   return stringSanitizer
     .call(this, str => str.toLowerCase())
 }
 
-export function uppercase() {
+export function uppercase () {
 
   return stringSanitizer
     .call(this, str => str.toUpperCase())
 
 }
 
-export function trim() {
+export function trim () {
 
   return stringSanitizer
     .call(this, str => str.trim())

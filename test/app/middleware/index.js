@@ -1,7 +1,7 @@
 import handler from 'feathers-errors/handler'
 import logging from './logging'
 
-export default function() {
+export default function () {
 
   const app = this
 

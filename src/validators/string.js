@@ -12,7 +12,7 @@ const DEFAULT_LENGTH_ERROR_MSGS = {
   '<=>': (min, max) => `Must have between ${min} and ${max} characters.`
 }
 
-export function length(...config) {
+export function length (...config) {
 
   assert(this.type, String)
 
@@ -20,7 +20,7 @@ export function length(...config) {
 
 }
 
-export function format(...config) {
+export function format (...config) {
 
   assert(this.type, String)
 
@@ -40,17 +40,20 @@ export function format(...config) {
     return array
       .unwrap(
         results,
-        !this.array || results.every(result => result == PASS)
+        !this.array || results.every(result => !result)
       )
   }
 }
 
 const EMAIL_EXP =
+  /* eslint-disable no-useless-escape */
   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-export function email(...config) {
+  /* eslint-enable no-useless-escape */
+
+export function email (...config) {
 
   const { msg } = parseConfig(config, {
-    msg: { type: String, default: 'Invalid email.'}
+    msg: { type: String, default: 'Invalid email.' }
   })
 
   return format.call(this, {
@@ -60,10 +63,10 @@ export function email(...config) {
 }
 
 const ALPHA_NUMERIC_EXP = /^\w+$/
-export function alphanumeric(...config) {
+export function alphanumeric (...config) {
 
   const { msg } = parseConfig(config, {
-    msg: { type: String, default: 'May only contain letters and numbers.'}
+    msg: { type: String, default: 'May only contain letters and numbers.' }
   })
 
   return format.call(this, {
@@ -73,10 +76,10 @@ export function alphanumeric(...config) {
 }
 
 const ALPHA_EXP = /^[A-z]+$/
-export function alpha(...config) {
+export function alpha (...config) {
 
   const { msg } = parseConfig(config, {
-    msg: { type: String, default: 'May only contain letters.'}
+    msg: { type: String, default: 'May only contain letters.' }
   })
 
   return format.call(this, {
@@ -86,10 +89,10 @@ export function alpha(...config) {
 }
 
 const NUMERIC_EXP = /^[0-9]+$/
-export function numeric(...config) {
+export function numeric (...config) {
 
   const { msg } = parseConfig(config, {
-    msg: { type: String, default: 'May only contain numbers.'}
+    msg: { type: String, default: 'May only contain numbers.' }
   })
 
   return format.call(this, {
@@ -99,7 +102,7 @@ export function numeric(...config) {
 }
 
 const NO_SPACES_EXP = /^\S*$/
-export function nospaces(...config) {
+export function nospaces (...config) {
 
   const { msg } = parseConfig(config, {
     msg: { type: String, default: 'May not contain any spaces.' }
