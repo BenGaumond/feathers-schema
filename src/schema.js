@@ -372,6 +372,8 @@ export class Property extends PropertyBase {
 
   get parent () { return this[PARENT] }
 
+  get definition () { return this[DEFINITION] }
+
   [PARENT] = null
 
 }
