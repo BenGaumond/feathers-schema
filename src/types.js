@@ -1,5 +1,3 @@
-import ObjectId from 'bson-objectid'
-import { Buffer } from 'buffer'
 import is from 'is-explicit'
 import { array } from './helper'
 
@@ -16,8 +14,6 @@ const DEFAULT_TYPES = freeze([
   Number,
   Boolean,
   Date,
-  Buffer,
-  ObjectId,
   Object,
   ANY
 ])
@@ -28,13 +24,7 @@ const DEFAULT_TYPES = freeze([
 
 const DEFAULT_HANDLERS = new Map()
 
-DEFAULT_HANDLERS.set(String, value => {
-
-  return is(value, Object) && 'toString' in value
-    ? value.toString()
-    : String(value)
-
-})
+DEFAULT_HANDLERS.set(String, value => is(value) ? `${value}` : null)
 
 DEFAULT_HANDLERS.set(Number, value => {
 
@@ -58,25 +48,11 @@ DEFAULT_HANDLERS.set(Date, value => {
 
 })
 
-DEFAULT_HANDLERS.set(Buffer, value => {
-
-  return is(value, Array, String)
-    ? Buffer.from(value)
-    : null
-
-})
-
 DEFAULT_HANDLERS.set(Object, value => {
 
   return is.plainObject(value)
     ? value
     : null
-
-})
-
-DEFAULT_HANDLERS.set(ObjectId, value => {
-
-  return new ObjectId(String(value))
 
 })
 
@@ -98,22 +74,35 @@ resetToDefault()
 
 export default ALL
 
-export { ALL, ANY, ObjectId, Buffer }
+export { ALL, ANY }
 
 export const DEFAULT = DEFAULT_TYPES
 
-export function setCustom (type, method) {
+export function setCustom (Type, method) {
 
-  if (!is(type, Function))
+  if (!is(Type, Function))
     throw new Error('type argument must be a constructor.')
 
+  // If a method wasn't supplied we'll supply a default
+  if (!is(method))
+    // If the type is a default type
+    method = DEFAULT_TYPES.includes(Type)
+      // We reset to the default handler for that type. This way, users can
+      // define a custom caster for a default type, and then reset the caster
+      // back to the default type without reseting all of their custom types
+      ? DEFAULT_HANDLERS.get(Type)
+
+      // Otherwise the default method for custom types is just to pass a primitive
+      // value to the type as a constructor
+      : value => Type(value)
+
   if (!is(method, Function))
-    throw new Error('must supply a casting function')
+    throw new Error('caster, if supplied, must be a function')
 
-  if (!ALL.includes(type))
-    ALL.push(type)
+  if (!ALL.includes(Type))
+    ALL.push(Type)
 
-  methods.set(type, method)
+  methods.set(Type, method)
 }
 
 export function resetToDefault () {
@@ -133,17 +122,28 @@ export function resetToDefault () {
 }
 
 export function name (type) {
-  return type === ANY ? 'ANY' : type.name
+  if (type === ANY)
+    return 'ANY'
+
+  if (typeof type === 'function')
+    return type.name || '(Anonymous Type)'
+
+  return '(Invalid Type)'
 }
 
-export function assert (type, ...validTypes) {
+export function assert (...args) {
 
-  for (const validType of validTypes)
-    if (!ALL.includes(validType))
-      throw new Error(`Unsupported Type: ${name(validType)}`)
+  if (args.length < 2)
+    throw new Error('types.assert() requires at least type to check and at least one type to check against')
 
-  if (!validTypes.includes(type))
-    throw new Error(`Expected type: ${validTypes.map(validType => name(validType))}`)
+  for (const type of args)
+    if (!ALL.includes(type))
+      throw new Error(`Unsupported Type: ${name(type)}`)
+
+  const [ type, ...checkTypes ] = args
+
+  if (!checkTypes.includes(type) && !checkTypes.includes(ANY))
+    throw new Error(`Expected type: ${checkTypes.map(checkType => name(checkType))}`)
 }
 
 export function check (input, type, asArray) {
@@ -200,6 +200,7 @@ export function check (input, type, asArray) {
   return false
 
 }
+
 export function cast (input, type, asArray) {
 
   if (!ALL.includes(type))

@@ -18,9 +18,7 @@ The following assumes you're familiar with [feathers.js](http://www.feathersjs.c
 
 ## Install
 
-```
-npm install feathers-schema
-```
+`` npm install feathers-schema ``
 
 ## Define a Schema
 
@@ -156,18 +154,14 @@ new Schema({
 ```
 If you only need to define a type, and no other attributes:
 ```js
-new Schema({
-  property: String
-})
+new Schema({ property: String })
 
 ```
 
 You can also define weather the property is intended to be an array of items by
 wrapping the rest of the definition in an array:
 ```js
-new Schema({
-  property: [String]
-})
+new Schema({ property: [String] })
 ```
 
 A Schema can be composed of properties of the following types:
@@ -175,8 +169,6 @@ A Schema can be composed of properties of the following types:
 + **Number**
 + **Boolean**
 + **Date**
-+ **Buffer**
-+ **ObjectId**
 + **Object**
 + **ANY** ( _defined as_ ```null```)
 
@@ -190,6 +182,7 @@ objects. If you are creating a nested property, it will default to ```Object```.
 ```js
 
 new Schema({
+
   //Objects types with no sub properties may have any structure, and will not
   //be validated further.
   metadata_v1: Object, // { whatever: ['you want'], is: ['fine']} √
@@ -218,7 +211,6 @@ as an array property if it's intended to be able to take arrays.
 
 ```js
 import { ANY } from 'feathers-schema/types'
-
 
 new Schema({
   whatever_v1: ANY,
@@ -459,7 +451,7 @@ Configuration: * = required
 new Schema({
   score: { type: Number, default: 0 },
   //default may also take a function
-  chant: { type: String, default: () => 'go sports team!\n'.repeat(5)}
+  chant: { type: String, default: () => 'go sports team!\n'.repeat(5) }
 })
 ```
 
@@ -485,7 +477,7 @@ new Schema({
   coverCharge: { type: String, required: onFridays }
   //required attribute on an array property means that the array must exist,
   //and must have more than 0 items
-  comments: [{type: String, required: true}]
+  comments: [{ type: String, required: true }]
 })
 ```
 
@@ -513,7 +505,7 @@ new Schema({
 
 ### ```service```
 
-The ```service``` attribute can only be placed on ```String```, ```Number``` or ```ObjectId``` typed properties. It acts as an associative filter, only allowing values that correspond with ids of
+It acts as an associative filter, only allowing values that correspond with ids of
 other services. It's important to ensure that the type property being used matches the type of
 id the database adapter for that service is using.
 
@@ -529,8 +521,8 @@ Configuration: * = required
 //linking to two hypothetical services that are using, say, mongodb
 new Schema({
   essay: String,
-  author: { type: ObjectId, service: 'authors' },
-  comments: [{ type: ObjectId, service: 'comments'}]
+  author: { type: Number, service: 'authors' },
+  comments: [{ type: Number, service: 'comments'}]
 })
 
 ```
@@ -647,18 +639,104 @@ Should be able to reference:
 Its important that you handle the case of the parameters not being provided, otherwise
 your validator will break client-side.
 
-## Schema Options
-
-```js
-//TODO: finish this example once options finalized.
-```
 ___
 
 # Custom Types
+
+The default types are a narrow subset of Javascript types that translate well to
+database types. You can also add existing or custom types to *feathers-schema*.
+
 ```js
-//TODO: finish this example once custom types are fleshed out.
+import { ObjectID } from 'mongodb'
+import Schema, { types } from 'feathers-schema'
+
+const idSchema = new Schema({ _id: ObjectID }) // throws 'Malformed property: ObjectID is not a valid type.'
+
+types.setCustom(ObjectID)
+
+const idSchema = new Schema({ _id: ObjectID }) // will not throw
+
 ```
 
+## Casting
+
+Schema's sanitization phase will take any value supplied and try to cast it to it's intended type. If it cannot cast a value to it's intended type, it will turn it to
+``null``.
+
+If you are providing a custom type, it will try to cast a value to that type by
+using the type as a constructor:
+
+```js
+const { _id } = await idSchema.sanitize({ _id: '59b339090149b98c0a74332d' })
+// is equivalent to
+const _id = new ObjectID('59b339090149b98c0a74332d')
+```
+
+However, this may not always be suitable for any custom type:
+
+```js
+import Schema, { types } from 'feathers-schema'
+
+class Vector2 {
+  constructor (x, y) {
+    this.x = typeof x === 'number' ? x : 0
+    this.y = typeof y === 'number' ? y : 0
+  }
+}
+
+types.setCustom(Vector2)
+
+const transform = new Schema({
+  position: Vector2,
+  scale: Vector2
+})
+
+const data = await transform.sanitize({
+  position: { x: 1, y: 2 },
+  scale: { x: 1, y: 2 }
+})
+// is equivalent to
+const data = {
+  position: new Vector2({ x: 1, y: 2}),
+  scale: new Vector2({ x: 1, y: 2 })
+}
+
+// Which will result in:
+console.log(data) // { position: { x: 0, y: 0 }, scale: { x:0, y:0 } }
+```
+
+This is a contrived example. If Vector2 was your own type, you'd clearly write a
+more liberal constructor. However, if you're using a type from a library, you may
+need to write a function to cast the value into something the type can construct with:
+
+```js
+types.setCustom(Vector2, input => {
+
+  return typeof input === 'object'
+    ? new Vector2(input.x, input.y)
+    : new Vector2(input, input)
+})
+```
+
+The second argument to setCustom will alter the casting function for the specified type.
+
+You can ALSO alter the casting functions for default types:
+
+```js
+types.setCustom(String, value => escape(`${value}`))
+```
+
+But it is wiser to provide custom sanitizers that custom casters.
+
+## Backing Type and Serialization
+
+If the custom type you're adding is supported by your database (such as an ObjectID),
+then you don't have to make any further considerations for Serialization.
+
+```js
+//TODO: describe how to set up a backing type and serialize/deserialize functions
+// for custom types
+```
 ___
 
 # Associations

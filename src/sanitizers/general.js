@@ -1,5 +1,5 @@
 import { parseConfig, array } from '../helper'
-import { name, assert, ObjectId } from '../types'
+import { name, assert } from '../types'
 import is from 'is-explicit'
 
 // TODO parse sanitizer. Parse sanizer will only invoke when a value doesn't
@@ -38,9 +38,6 @@ export function service (...config) {
   const { name } = parseConfig(config, {
     name: { type: String, required: true }
   })
-
-  // service validator can only be used with types than can be used as an id
-  assert(this.type, String, ObjectId, Number)
 
   // we need a special indexOf function to test for existence of ids,
   // because ObjectId's wont pass the standard array.indexOf test

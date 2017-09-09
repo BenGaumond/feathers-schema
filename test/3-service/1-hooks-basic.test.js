@@ -7,7 +7,6 @@ import { assert } from 'chai'
 // configure messages service
 
 import Schema from '../../src'
-// import ObjectId from 'bson-objectid'
 
 const trim = true, alphanumeric = true, required = true // eslint-disable-line
 
@@ -133,8 +132,8 @@ describe('Hooks', () => {
 
       }
 
-      const BeforeErr = 'The \'populate-with-schema\' hook should only be used as a \'before\' hook.'
-      const MethodErr = 'The \'populate-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.'
+      const BeforeErr = 'The \'populate-with-schema\' hook can only be used as a \'before\' hook.'
+      const MethodErr = 'The \'populate-with-schema\' hook can only be used on the \'["create","update","patch"]\' service method(s).'
 
       await run('create', {}, BeforeErr)
       await run('patch', [0, {}], BeforeErr)
@@ -217,8 +216,8 @@ describe('Hooks', () => {
 
       }
 
-      const BeforeErr = 'The \'sanitize-with-schema\' hook should only be used as a \'before\' hook.'
-      const MethodErr = 'The \'sanitize-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.'
+      const BeforeErr = 'The \'sanitize-with-schema\' hook can only be used as a \'before\' hook.'
+      const MethodErr = 'The \'sanitize-with-schema\' hook can only be used on the \'["create","update","patch"]\' service method(s).'
 
       await run('create', {}, BeforeErr)
       await run('patch', [0, {}], BeforeErr)
@@ -305,8 +304,8 @@ describe('Hooks', () => {
 
       }
 
-      const BeforeErr = 'The \'validate-with-schema\' hook should only be used as a \'before\' hook.'
-      const MethodErr = 'The \'validate-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.'
+      const BeforeErr = 'The \'validate-with-schema\' hook can only be used as a \'before\' hook.'
+      const MethodErr = 'The \'validate-with-schema\' hook can only be used on the \'["create","update","patch"]\' service method(s).'
 
       await run('create', {}, BeforeErr)
       await run('patch', [0, {}], BeforeErr)

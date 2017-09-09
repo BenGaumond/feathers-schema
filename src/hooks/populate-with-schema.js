@@ -1,6 +1,7 @@
 import Schema from '../schema'
 import is from 'is-explicit'
 import { array } from '../helper'
+import { checkContext } from 'feathers-hooks-common'
 
 function fillWithProperties (data = {}, fill = {}, properties) {
 
@@ -32,50 +33,37 @@ export default function populateWithSchema (schema) {
   if (!is(schema, Schema))
     throw new Error('populate-with-schema hook must be initialized with a schema object.')
 
-  return async function (hook, next) {
+  return async function (hook) {
 
-    const { method, type, data } = hook
+    const { method, data, service } = hook
 
-    try {
+    checkContext(hook, 'before', ['create', 'update', 'patch'], 'populate-with-schema')
 
-      if (type !== 'before')
-        throw new Error('The \'populate-with-schema\' hook should only be used as a \'before\' hook.')
+    if (method !== 'patch')
+      return
 
-      if (method === 'find' || method === 'get' || method === 'remove')
-        throw new Error('The \'populate-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.')
+    // acount for bulk queries
+    const isBulk = is(data, Array)
+    const asBulk = array(data)
 
-      if (method !== 'patch')
-        return next()
+    for (let i = 0; i < asBulk.length; i++) {
 
-      const service = this
+      const data = asBulk[i]
 
-      // acount for bulk queries
-      const isBulk = is(data, Array)
-      const asBulk = array(data)
+      // If this is a bulk request, hook.id will be null, and the required id will be
+      // in the patch data. If not, it will through a 'no record for undefined' error
+      // as it should
+      const id = isBulk ? data[service.id] : hook.id
 
-      for (let i = 0; i < asBulk.length; i++) {
+      const doc = await service.get(id)
 
-        const data = asBulk[i]
+      asBulk[i] = fillWithProperties(data, doc, schema.properties)
 
-        // If this is a bulk request, hook.id will be null, and the required id will be
-        // in the patch data. If not, it will through a 'no record for undefined' error
-        // as it should
-        const id = isBulk ? data[service.id] : hook.id
-
-        const doc = await service.get(id)
-
-        asBulk[i] = fillWithProperties(data, doc, schema.properties)
-
-      }
-
-      hook.data = array.unwrap(asBulk, !isBulk)
-
-      next(null, hook)
-
-    } catch (err) {
-
-      next(err)
     }
+
+    hook.data = array.unwrap(asBulk, !isBulk)
+
+    return hook
 
   }
 

@@ -2,6 +2,7 @@ import Schema from '../schema'
 import is from 'is-explicit'
 import { array } from '../helper'
 import { BadRequest } from 'feathers-errors'
+import { checkContext } from 'feathers-hooks-common'
 
 export default function populateWithSchema (schema) {
 
@@ -12,14 +13,9 @@ export default function populateWithSchema (schema) {
 
   return async function (hook) {
 
-    const { type, method, id, app, params } = hook
+    const { method, id, app, params } = hook
 
-    // Ensure hook can run
-    if (type !== 'before')
-      throw new Error('The \'validate-with-schema\' hook should only be used as a \'before\' hook.')
-
-    if (method !== 'create' && method !== 'update' && method !== 'patch')
-      throw new Error('The \'validate-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.')
+    checkContext(hook, 'before', ['create', 'update', 'patch'], 'validate-with-schema')
 
     const { provider, skipValidation, user } = params
 

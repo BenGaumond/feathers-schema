@@ -1,8 +1,6 @@
-
 import Schema, { types } from '../../src'
 import { assert } from 'chai'
 import is from 'is-explicit'
-import ObjectId from 'bson-objectid'
 
 /* global describe it */
 
@@ -34,7 +32,6 @@ const stringify = val => is(val, Symbol) ? `:${val.toString()}` :
   val === '' ? 'empty string' :
   is(val, Array) ? `[${val.map(v => stringify(v))}]` :
   is(val, String) ? `"${val}"` :
-  is(val, ObjectId) ? `@${val}` :
   is(val, Function) ? '()=>{}' :
   is(val, Date) ? `|${val.toString()}|` :
   is(val, Object) ? `{${Object.keys(val)}}` :
@@ -153,7 +150,7 @@ describe('Property Definitions', () => {
   })
 
   const TYPE_TEST_VALUES = ['foobar', '1337', '587eaa7cb4a64418e292c771', 'Tue Jan 17 2017 15:36:28 GMT-0800 (PST)', '', 0, Infinity, NaN, -Infinity,
-    true, new Date(), Buffer.from([0x00]), Buffer.from('foobar'), { foo: true, bar: false }, [], [1], ['rando', 'string'], new ObjectId(), function () {},
+    true, new Date(), Buffer.from([0x00]), Buffer.from('foobar'), { foo: true, bar: false }, [], [1], ['rando', 'string'], function () {},
     Symbol('1'), null, undefined]
 
   const expectedValidatorResult = (value, type) => {

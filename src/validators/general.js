@@ -1,5 +1,5 @@
 import { parseConfig, idsMatch, array, getIn } from '../helper'
-import { assert, ObjectId } from '../types'
+import { assert } from '../types'
 import is from 'is-explicit'
 
 const PASS = false
@@ -62,8 +62,6 @@ export function _enum (...config) {
 }
 
 export function unique (...config) {
-
-  assert(this.type, ObjectId, String, Number)
 
   const { msg } = parseConfig(config, {
     msg: { type: String, default: 'Must be unique.' }

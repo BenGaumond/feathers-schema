@@ -1,5 +1,4 @@
 import { expect, assert } from 'chai'
-import is from 'is-explicit'
 
 import Schema from '../../src'
 
@@ -63,26 +62,6 @@ describe('Schema Class', () => {
       .to
       .throw('Property already exists: description')
 
-  })
-
-  it('Optionally takes a plain object representing options as its second argument.', () => {
-
-    expect(() => new Schema(Definition, {})).to.not.throw(Error)
-
-    NotPlainObjects
-      .filter(invalid => is(invalid))
-      .forEach(invalid => expect(() => new Schema({}, invalid)).to.throw(Error))
-
-  })
-
-  it('Option canSkipValidation must be a boolean or function', () => {
-
-    expect(() => new Schema(Definition, { canSkipValidation: 'sure' })).to
-      .throw('Schema options.canSkipValidation is expected to be a boolean or a predicate function.');
-
-    [() => false, true, false]
-      .forEach(canSkipValidation =>
-        expect(() => new Schema(Definition, { canSkipValidation })).to.not.throw(Error))
   })
 
   it('Can be composed into other schemas', () => {

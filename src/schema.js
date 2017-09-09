@@ -29,11 +29,6 @@ const spreadable = {
 // Constants and Symbols
 /******************************************************************************/
 
-const DEFAULT_OPTIONS = {
-  populateOnPatch: false,
-  canSkipValidation: () => false
-}
-
 const RESERVED_PROPERTY_KEYS = Object.freeze([
   'type', 'validates', 'validate', 'sanitize', 'sanitizes',
   ...fixKeysUnderscore(sanitizers),
@@ -58,7 +53,6 @@ class PropertyBase {
       throw new Error(`Property already exists: ${key}`)
 
     const parent = is(this, Schema) ? null : this
-
     const property = this.properties[key] = new Type(input, key, parent)
 
     return property
@@ -73,7 +67,7 @@ class PropertyBase {
 // Property Class Private Danglers
 /******************************************************************************/
 
-function addCustom (defs, key, arr) {
+function setCustom (defs, key, arr) {
 
   if (key in defs === false)
     return
@@ -147,13 +141,13 @@ function applyDefinition (definition) {
   const mutableDefinition = copyDefinition(definition)
 
   addStock.call(this, mutableDefinition, validators, this.validators)
-  addCustom.call(this, mutableDefinition, 'validates', this.validators)
-  addCustom.call(this, mutableDefinition, 'validate', this.validators)
+  setCustom.call(this, mutableDefinition, 'validates', this.validators)
+  setCustom.call(this, mutableDefinition, 'validate', this.validators)
 
   // get stock and custom sanitizer
   addStock.call(this, mutableDefinition, sanitizers, this.sanitizers)
-  addCustom.call(this, mutableDefinition, 'sanitizes', this.sanitizers)
-  addCustom.call(this, mutableDefinition, 'sanitize', this.sanitizers)
+  setCustom.call(this, mutableDefinition, 'sanitizes', this.sanitizers)
+  setCustom.call(this, mutableDefinition, 'sanitize', this.sanitizers)
 
   // Determin sub properties
   const subProperties = { }
@@ -253,7 +247,7 @@ export class Property extends PropertyBase {
 
     this.type = input.type
     if (!ALL.includes(this.type))
-      throw new Error(`Malformed property: ${this.type} is not a valid type.`)
+      throw new Error(`Malformed property: ${name(this.type)} is not a valid type.`)
 
     applyDefinition.call(this, input)
   }
@@ -263,7 +257,6 @@ export class Property extends PropertyBase {
       throw new Error('Cannot nest properties inside of a property that isn\'t a plain object.')
 
     return super.addProperty(input, key)
-
   }
 
   async sanitize (input, params) {
@@ -384,22 +377,8 @@ export class Property extends PropertyBase {
 
 export default class Schema extends PropertyBase {
 
-  constructor (inputs, options) {
+  constructor (inputs) {
     super()
-
-    // Check options
-    if (is(options) && !is.plainObject(options))
-      throw new Error('options, if supplied, are expected to be a plain object.')
-
-    this.options = { ...DEFAULT_OPTIONS, ...(options || {}) }
-
-    if (is(this.options.canSkipValidation, Boolean)) {
-      const canSkip = this.options.canSkipValidation
-      this.options.canSkipValidation = () => canSkip
-    }
-
-    if (!is(this.options.canSkipValidation, Function))
-      throw new Error('Schema options.canSkipValidation is expected to be a boolean or a predicate function.')
 
     // Create properties
     if (!is.plainObject(inputs))
@@ -492,9 +471,7 @@ export default class Schema extends PropertyBase {
     ...spreadable,
 
     populate: null,
-
     sanitize: null,
-
     validate: null
 
   }

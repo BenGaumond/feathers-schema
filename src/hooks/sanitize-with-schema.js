@@ -1,59 +1,47 @@
 import Schema from '../schema'
 import { array } from '../helper'
 import is from 'is-explicit'
+import { checkContext } from 'feathers-hooks-common'
 
 export default function populateWithSchema (schema) {
 
   if (!is(schema, Schema))
     throw new Error('\'sanitize-with-schema\' hook must be initialized with a schema object.')
 
-  return async function (hook, next) {
+  return async function (hook) {
 
-    const { type, method, id, app } = hook
+    const { method, id, app } = hook
 
-    try {
+    checkContext(hook, 'before', ['create', 'update', 'patch'], 'sanitize-with-schema')
 
-      // Ensure hook can run
-      if (type !== 'before')
-        throw new Error('The \'sanitize-with-schema\' hook should only be used as a \'before\' hook.')
+    // account for bulk queries
+    const isBulk = is(hook.data, Array)
+    const asBulk = array(hook.data)
 
-      if (method !== 'create' && method !== 'update' && method !== 'patch')
-        throw new Error('The \'sanitize-with-schema\' hook should only be used as a \'create\', \'update\' or \'patch\' hook.')
+    for (let i = 0; i < asBulk.length; i++) {
 
-      // account for bulk queries
-      const isBulk = is(hook.data, Array)
-      const asBulk = array(hook.data)
+      // A set of params that sanitization functions can use to their benefit. Similar
+      // to the hook, with an added property for the current service. Also, sending
+      // this object prevents sanitization methods from mutating the hook object,
+      // respecting encapsulation.
+      const arg = { id, app, method, service: this }
 
-      for (let i = 0; i < asBulk.length; i++) {
+      const data = asBulk[i]
 
-        // A set of params that sanitization functions can use to their benefit. Similar
-        // to the hook, with an added property for the current service. Also, sending
-        // this object prevents sanitization methods from mutating the hook object,
-        // respecting encapsulation.
-        const arg = { id, app, method, service: this }
+      const sanitized = await schema.sanitize(data, arg)
 
-        const data = asBulk[i]
+      // id fields would be removed by sanitization, so we'll add it back in
+      // if the document is being created with a deterministic id
+      const manualId = data[this.id]
+      if (method === 'create' && manualId)
+        sanitized[this.id] = manualId
 
-        const sanitized = await schema.sanitize(data, arg)
-
-        // id fields would be removed by sanitization, so we'll add it back in
-        // if the document is being created with a deterministic id
-        const manualId = data[this.id]
-        if (method === 'create' && manualId)
-          sanitized[this.id] = manualId
-
-        asBulk[i] = sanitized
-      }
-
-      hook.data = array.unwrap(asBulk, !isBulk)
-
-      return next(null, hook)
-
-    } catch (err) {
-
-      next(err)
-
+      asBulk[i] = sanitized
     }
+
+    hook.data = array.unwrap(asBulk, !isBulk)
+
+    return hook
 
   }
 
