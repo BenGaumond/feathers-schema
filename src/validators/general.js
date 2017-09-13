@@ -1,4 +1,4 @@
-import { parseConfig, idsMatch, array, getIn } from '../helper'
+import { parseConfig, idsMatch, toArray, fromArray, getIn } from '../helper'
 import { assert } from '../types'
 import is from 'is-explicit'
 
@@ -53,11 +53,14 @@ export function _enum (...config) {
       return PASS
 
     // in case of array, we check every item to see if it's included in the enumeration
-    const results = array(input)
+    const results = input::toArray()
       .map(item => values.includes(item) ? PASS : msg || `Must be one of "${values.join(',')}"`)
 
     // only return an array of results if there are errors and this property is an array property
-    return array.unwrap(results, !this.array || results.every(result => !result))
+    return !this.array || results.every(result => !result)
+      ? results::fromArray()
+      : results
+
   }
 }
 

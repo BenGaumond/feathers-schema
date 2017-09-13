@@ -21,13 +21,13 @@ class Vector2 {
 
 describe('Types', () => {
 
-  describe('types.setCustom()', () => {
+  describe('types.addCustom()', () => {
 
     it('allows the addition of custom types', async () => {
 
       types.resetToDefault()
 
-      expect(() => new Schema({ id: ObjectID })).to.throw('Malformed property: Could not convert to Type notation.')
+      expect(() => new Schema({ id: ObjectID })).to.throw(`Malformed property 'id': Could not convert to Type notation.`)
 
       types.setCustom(ObjectID)
 

@@ -40,13 +40,11 @@ const articleSchema = new Schema({
 **Hmm... Looks a lot like writing schemas for Mongoose.**
 
 Quite right. Mongoose has an intuitive syntax for creating schemas that I shamelessly
-ripped off while creating this package. If you're familiar with mongoose, feathers-schema
-will be easy mode.
+ripped off while creating this package. If you're familiar with mongoose, feathers-schema will be easy mode.
 
 **Then why not just use Mongoose? Mongoose works with feathers.**
 
-Go for it! Mongoose is mature, stable and reliable, and this package is not an attempt to
-replace it.
+Go for it! Mongoose is mature, stable and reliable, and this package is not an attempt to replace it.
 
 The scope of this tool is much more limited than Mongoose. You cannot create document instances with feather-schema, or directly interact with a database: feathers-schema _only_ validates data.
 
@@ -72,8 +70,7 @@ import memory from 'feathers-memory'
 const articleService = app.use('/articles', memory())
 ```
 
-Here's where the magic happens. A schema automatically builds
-the hooks relevant to validating data, and stores them in on its own hooks object.
+Here's where the magic happens. A schema automatically builds the hooks relevant to validating data, and stores them in on its own hooks object.
 
 You can only put schema hooks on 'before' 'create'/'patch' or 'update' methods,
 and typically you'd want them on all three:
@@ -90,9 +87,7 @@ and typically you'd want them on all three:
   articleService.hooks({ before })
 ```
 
-**Alternatively**, if you're going to be weaving other hooks throughout for more advanced cases
-_(or if you're a filthy es5 casual who isn't yet using the rest/spread operator)_
-you can do this:
+**Alternatively**, if you're going to be weaving other hooks throughout for more advanced cases _(or if you're a filthy es5 casual who isn't yet using the rest/spread operator)_ you can do this:
 ```js
 const articleHooks = [
   articleSchema.hooks.populate,

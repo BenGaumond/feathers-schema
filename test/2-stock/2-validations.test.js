@@ -300,6 +300,7 @@ describe('Stock String Validators', () => {
     })
 
     it('handles arrays', async () => {
+
       const values = ['895-1029', '019-1298', 'no phone', 'technology is for suckers', '891-1092s']
       const schema = createSinglePropertySchema([{ type: String, format: [phoneRegex, 'Bad.'] }])
 

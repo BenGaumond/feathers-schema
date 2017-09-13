@@ -1,5 +1,5 @@
 import parseConfig from './parse-config'
-import array from './ensure-array'
+import { toArray, fromArray } from './cast-array'
 import is from 'is-explicit'
 
 /******************************************************************************/
@@ -23,7 +23,7 @@ const factory = (getValue, getResult, failMsg) => {
 
     const isArray = is(input, Array)
 
-    const results = array(input)
+    const results = input::toArray()
       .map(item => {
         const value = getValue(item)
         return getResult(value)
@@ -33,11 +33,9 @@ const factory = (getValue, getResult, failMsg) => {
 
     // return an fail array if results contain at least one failure, and input
     // wasnt an array to begin with
-    return array
-      .unwrap(
-        results,
-        !isArray || results.every(r => !r)
-      )
+    return !isArray || results.every(r => !r)
+      ? results::fromArray()
+      : results
   }
 }
 

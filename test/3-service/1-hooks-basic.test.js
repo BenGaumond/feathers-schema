@@ -1,12 +1,13 @@
 
 import App from '../app'
 import memory from 'feathers-memory'
-import { assert } from 'chai'
+import chai, { assert, expect } from 'chai'
+import asPromised from 'chai-as-promised'
+import Schema from '../../src'
+
+chai.use(asPromised)
 
 /* global describe it before after */
-// configure messages service
-
-import Schema from '../../src'
 
 const trim = true, alphanumeric = true, required = true // eslint-disable-line
 
@@ -22,7 +23,8 @@ const messageSchema = new Schema({
   scores: [{
     type: Number,
     range: [0, 5],
-    required
+    required,
+    default: () => [ 0 ]
   }],
 
   author: {
@@ -56,21 +58,34 @@ describe('Hooks', () => {
       await app.start()
 
       messages.before({
+        create: [
+          ...messageSchema.hooks
+        ],
         patch: [
           messageSchema.hooks.populate,
           hook => { populatedData = hook.data }
         ],
         update: [
-          ...messageSchema.hooks
+          messageSchema.hooks.populate,
+          hook => { populatedData = hook.data },
+          messageSchema.hooks.sanitize,
+          messageSchema.hooks.validate
         ]
       })
 
-      const message = await messages.create({
-        body: 'My first message.',
-        author: 'Joe User'
-      })
+      try {
+        const message = await messages.create({
+          body: 'My first message.',
+          author: 'Joseph',
+          scores: [ 0 ]
+        })
 
-      id = message.id
+        id = message.id
+
+      } catch (err) {
+        console.log(err.errors)
+        throw err
+      }
 
     })
 
@@ -89,16 +104,29 @@ describe('Hooks', () => {
 
     })
 
-    it('Only dispatches during a patch hook', async () => {
+    it('Only dispatches during a patch hook or bulk update hook', async () => {
 
-      let authorError
+      let errors
       try {
         await messages.update(id, { body: 'Message has been updated.' })
       } catch (err) {
-        authorError = err.errors.author
+        errors = err.errors
       }
 
-      assert.equal(authorError, 'Required.')
+      assert.deepEqual(errors, { author: 'Required.' }, 'update was filled by populate')
+    })
+
+    it('On bulk update, only populates array with ids, not existing data', async () => {
+
+      let errors = null
+      try {
+        await messages.update(null, { body: 'Message has been updated.' })
+      } catch (err) {
+        errors = err.errors
+      }
+
+      assert.deepEqual(errors, [{ author: 'Required.' }], 'update was filled by populate')
+
     })
 
     it('May only be used as a \'before\', \'update\', \'patch\' or \'create\' hook.', async () => {
@@ -123,7 +151,7 @@ describe('Hooks', () => {
 
         let message = null
         try {
-          await test[method].apply(test, args)
+          await test[method](...args)
         } catch (err) {
           message = err.message
         }
@@ -141,6 +169,23 @@ describe('Hooks', () => {
       await run('find', {}, MethodErr)
       await run('get', 0, MethodErr)
       await run('remove', 0, MethodErr)
+
+    })
+
+    it('Handles multi requests', async () => {
+
+      await app.service('messages').remove(null)
+      await app.service('messages').create({ author: 'James', body: 'You\'re a wizard, Harry!' })
+      await app.service('messages').create({ author: 'Harry', body: 'Shut up, James.' })
+
+      await app.service('messages').find({})
+
+      const body = 'I get along with you.'
+
+      await expect(app.service('messages').patch(null, { body }))
+        .to.eventually.be.fulfilled
+
+      assert(populatedData.every(doc => doc.author !== null), 'populated data does not match')
 
     })
 
@@ -181,7 +226,7 @@ describe('Hooks', () => {
         body: 'message that needs trimming',
         author: 'Joe User',
         meta: null,
-        scores: null
+        scores: [ 0 ]
       })
     })
 
@@ -267,8 +312,7 @@ describe('Hooks', () => {
 
       assert.deepEqual(errors, {
         body: 'Must have 144 or less characters.',
-        author: 'May only contain letters and numbers.',
-        scores: 'Required.'
+        author: 'May only contain letters and numbers.'
       })
 
     })
@@ -320,38 +364,18 @@ describe('Hooks', () => {
 
   })
 
-  describe('All Hooks', () => {
+  describe('Combined Hooks', () => {
 
     before(quicksetup)
 
     it('Can handle bulk \'create\' and \'patch\' queries. ', async () => {
 
-      let errors
-      let results
+      const createData = Array.from({ length: 20 }, (v, i) => Object({ body: `Message ${i}`, author: `Author${i}`, scores: [0] }))
 
-      const createData = Array.from({length: 20}, (v, i) => Object({ body: `Message ${i}`, author: `Author${i}`, scores: [0] }))
+      await expect(messages.create(createData)).to.eventually.be.fulfilled
+      const results = await messages.patch(null, { body: '[Redacted]' })
 
-      try {
-        results = await messages.create(createData)
-      } catch (err) {
-        errors = err
-      }
-
-      if (errors && errors.message)
-        throw errors.message
-
-      errors = null
-      const patchData = results.map(data => Object({id: data.id, body: '[Redacted]'}))
-
-      try {
-        results = await messages.patch(null, patchData)
-      } catch (err) {
-        errors = err
-      }
-
-      if (errors && errors.message)
-        throw errors.message
-
+      assert(results.every(doc => doc.body === '[Redacted]'), 'Patch didnt work')
     })
 
     it('allows manual create ids', async () => {

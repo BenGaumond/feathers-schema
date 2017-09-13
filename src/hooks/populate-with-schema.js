@@ -1,20 +1,29 @@
 import Schema from '../schema'
 import is from 'is-explicit'
-import { array } from '../helper'
+import { fromArray, isBulkRequest } from '../helper'
 import { checkContext } from 'feathers-hooks-common'
 
-function fillWithProperties (data = {}, fill = {}, properties) {
+/******************************************************************************/
+// Helper
+/******************************************************************************/
 
-  if (!is.plainObject(data))
-    data = {}
+function toObject (input) {
+  const obj = this === undefined ? input : this
+
+  return is.plainObject(obj)
+    ? { ...obj }
+    : { }
+}
+
+function fillWithProperties (data, fill = {}, properties) {
+
+  data = data::toObject()
 
   for (const property of properties) {
 
     const { key } = property
 
-    const hasKey = key in data
-
-    if (!hasKey)
+    if (key in data === false)
       data[key] = fill[key] === undefined ? null : fill[key]
 
     if (property.array || !property.properties || !is.plainObject(fill[key]))
@@ -28,6 +37,10 @@ function fillWithProperties (data = {}, fill = {}, properties) {
 
 }
 
+/******************************************************************************/
+// Exports
+/******************************************************************************/
+
 export default function populateWithSchema (schema) {
 
   if (!is(schema, Schema))
@@ -35,33 +48,48 @@ export default function populateWithSchema (schema) {
 
   return async function (hook) {
 
-    const { method, data, service } = hook
+    const { method, data, service, id, params: { query, skipValidation } } = hook
 
     checkContext(hook, 'before', ['create', 'update', 'patch'], 'populate-with-schema')
 
-    if (method !== 'patch')
+    if (skipValidation)
       return
 
-    // acount for bulk queries
-    const isBulk = is(data, Array)
-    const asBulk = array(data)
+    // Populate needs to run on patch and update hooks to ensure that all fields
+    // are filled, and that bulk update requests have been converted to arrays.
+    // Create requests will be fine the way they are, bulk or not.
+    if (method === 'create')
+      return
 
-    for (let i = 0; i < asBulk.length; i++) {
+    const isBulk = hook::isBulkRequest()
 
-      const data = asBulk[i]
+    const isUpdate = method === 'update'
 
-      // If this is a bulk request, hook.id will be null, and the required id will be
-      // in the patch data. If not, it will through a 'no record for undefined' error
-      // as it should
-      const id = isBulk ? data[service.id] : hook.id
+    // We only need run populate on "update" if this is a multiple query
+    if (isUpdate && !isBulk)
+      return
 
-      const doc = await service.get(id)
+    const docs = isBulk
+      ? await service.find({ query })
+      : [ await service.get(id) ]
 
-      asBulk[i] = fillWithProperties(data, doc, schema.properties)
+    for (let i = 0; i < docs.length; i++) {
 
+      // Only need to fill properties if this is a patch request. If it's an update
+      // we just need to convert the data and query to an array of documents with
+      // the data
+      const doc = isUpdate
+        ? toObject(data)
+        : fillWithProperties(data, docs[i], schema.properties, isUpdate)
+
+      // Place the id on the doc in case it's not included in the Schema
+      if (service.id in doc === false)
+        doc[service.id] = id || docs[i][service.id]
+
+      docs[i] = doc
     }
 
-    hook.data = array.unwrap(asBulk, !isBulk)
+    hook.data = isBulk ? docs : docs::fromArray()
 
     return hook
 

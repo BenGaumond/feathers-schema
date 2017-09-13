@@ -1,5 +1,5 @@
 import Schema from '../schema'
-import { array } from '../helper'
+import { toArray, fromArray, isBulkRequest } from '../helper'
 import is from 'is-explicit'
 import { checkContext } from 'feathers-hooks-common'
 
@@ -10,13 +10,16 @@ export default function populateWithSchema (schema) {
 
   return async function (hook) {
 
-    const { method, id, app } = hook
+    const { method, id, app, service, params: { skipValidation } } = hook
 
     checkContext(hook, 'before', ['create', 'update', 'patch'], 'sanitize-with-schema')
 
+    if (skipValidation)
+      return
+
     // account for bulk queries
-    const isBulk = is(hook.data, Array)
-    const asBulk = array(hook.data)
+    const isBulk = hook::isBulkRequest()
+    const asBulk = hook.data::toArray()
 
     for (let i = 0; i < asBulk.length; i++) {
 
@@ -24,22 +27,22 @@ export default function populateWithSchema (schema) {
       // to the hook, with an added property for the current service. Also, sending
       // this object prevents sanitization methods from mutating the hook object,
       // respecting encapsulation.
-      const arg = { id, app, method, service: this }
+      const arg = { id, app, method, service }
 
-      const data = asBulk[i]
+      const doc = asBulk[i]
 
-      const sanitized = await schema.sanitize(data, arg)
+      const sanitized = await schema.sanitize(doc, arg)
 
-      // id fields would be removed by sanitization, so we'll add it back in
-      // if the document is being created with a deterministic id
-      const manualId = data[this.id]
-      if (method === 'create' && manualId)
-        sanitized[this.id] = manualId
+      // id fields would be removed by sanitization, so we'll add them back in
+      if (service.id in doc)
+        sanitized[service.id] = doc[service.id]
 
       asBulk[i] = sanitized
     }
 
-    hook.data = array.unwrap(asBulk, !isBulk)
+    hook.data = isBulk
+      ? asBulk
+      : asBulk::fromArray()
 
     return hook
 

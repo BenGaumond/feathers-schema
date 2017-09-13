@@ -1,4 +1,4 @@
-import { array } from './helper'
+import { toArray, fromArray } from './helper'
 import { populateWithSchema, sanitizeWithSchema, validateWithSchema } from './hooks'
 
 import * as sanitizers from './sanitizers'
@@ -67,34 +67,43 @@ class PropertyBase {
 // Property Class Private Danglers
 /******************************************************************************/
 
-function setCustom (defs, key, arr) {
+function addCustomValidatorOrSanitizer (defs, key, arrKey) {
 
   if (key in defs === false)
     return
 
+  const errTypeName = arrKey.replace(/s$/, '')
+  const arr = this[arrKey]
+
   const def = defs[key]
-  const factories = array(def)
+  const factories = def::toArray()
 
   for (const factory of factories)
     try {
 
-      const func = factory.call(this, def)
+      const func = this::factory(def)
 
       if (!is(func, Function))
-        throw new Error('Custom Validators must be a higher-order function that returns the validator function.')
+        throw new Error(`Custom ${arrKey} must be a higher-order function that returns the ${errTypeName} function.`)
 
       arr.push(func)
 
     } catch (err) {
 
-      err.message = `Adding custom validator failed: ${err.message}`
+      const name = factory.name || 'custom'
+
+      err.message = `Adding '${name}' ${errTypeName} on '${this.key}' property failed: ${err.message}`
       throw err
 
     }
 
 }
 
-function addStock (def, stock, arr) {
+function addStockValidatorOrSanitizer (def, stock, arrKey) {
+
+  const errTypeName = arrKey.replace(/s$/, '')
+  const arr = this[arrKey]
+
   for (const stockkey in stock) {
 
     // remove underscores from stock keys, such as in _default
@@ -102,8 +111,17 @@ function addStock (def, stock, arr) {
 
     if (key in def) {
       const factory = stock[stockkey]
-      const func = factory.call(this, def[key])
-      arr.push(func)
+
+      try {
+        const func = this::factory(def[key])
+        arr.push(func)
+
+      } catch (err) {
+
+        err.message = `Adding '${factory.name}' ${errTypeName} on '${this.key}' property failed: ${err.message}`
+        throw err
+      }
+
     }
   }
 }
@@ -130,7 +148,7 @@ function copyDefinition (definition) {
 function applyDefinition (definition) {
 
   // we store the definition property so that it can be used when composing schemas
-  this[DEFINITION] = array(definition, this.array)
+  this[DEFINITION] = this.array ? definition::toArray() : definition
 
   // Why copy a definition?
   // If a schema is nested, it's properties will be rebuilt into the parent
@@ -140,14 +158,14 @@ function applyDefinition (definition) {
   // create a copy for the s&vs to play with.
   const mutableDefinition = copyDefinition(definition)
 
-  addStock.call(this, mutableDefinition, validators, this.validators)
-  setCustom.call(this, mutableDefinition, 'validates', this.validators)
-  setCustom.call(this, mutableDefinition, 'validate', this.validators)
+  this::addStockValidatorOrSanitizer(mutableDefinition, validators, 'validators')
+  this::addCustomValidatorOrSanitizer(mutableDefinition, 'validates', 'validators')
+  this::addCustomValidatorOrSanitizer(mutableDefinition, 'validate', 'validators')
 
   // get stock and custom sanitizer
-  addStock.call(this, mutableDefinition, sanitizers, this.sanitizers)
-  setCustom.call(this, mutableDefinition, 'sanitizes', this.sanitizers)
-  setCustom.call(this, mutableDefinition, 'sanitize', this.sanitizers)
+  this::addStockValidatorOrSanitizer(mutableDefinition, sanitizers, 'sanitizers')
+  this::addCustomValidatorOrSanitizer(mutableDefinition, 'sanitizes', 'sanitizers')
+  this::addCustomValidatorOrSanitizer(mutableDefinition, 'sanitize', 'sanitizers')
 
   // Determin sub properties
   const subProperties = { }
@@ -170,7 +188,7 @@ function applyNestedProperties (input) {
 
   if (is(input, Property)) {
     this.type = input.type
-    applyDefinition.call(this, array.unwrap(input[DEFINITION]), this.key)
+    this::applyDefinition(input[DEFINITION]::fromArray(), this.key)
 
   } else if (input.properties) {
     this.type = Object
@@ -206,7 +224,7 @@ export class Property extends PropertyBase {
       input = { type: ANY }
 
     else if (this.array && input.length > 1)
-      throw new Error('Malformed property: Properties defined as Arrays should only contain a single element.')
+      throw new Error(`Malformed property '${this.key}': Properties defined as Arrays should only contain a single element.`)
 
     else if (this.array)
       input = input[0]
@@ -214,13 +232,13 @@ export class Property extends PropertyBase {
     // Determin type
     // schemas and properties should be composable
     if (is(input, PropertyBase))
-      return applyNestedProperties.call(this, input)
+      return this::applyNestedProperties(input)
 
     else if (ALL.includes(input))
       input = { type: input }
 
     if (!is.plainObject(input))
-      throw new Error('Malformed property: Could not convert to Type notation.')
+      throw new Error(`Malformed property '${this.key}': Could not convert to Type notation.`)
 
     // try to get type from shortcut type notation, eg:
     // property: { String } insteadof property: { type: String }
@@ -249,7 +267,7 @@ export class Property extends PropertyBase {
     if (!ALL.includes(this.type))
       throw new Error(`Malformed property: ${name(this.type)} is not a valid type.`)
 
-    applyDefinition.call(this, input)
+    this::applyDefinition(input)
   }
 
   addProperty (input, key) {
@@ -271,7 +289,7 @@ export class Property extends PropertyBase {
     if (!is(values))
       return values
 
-    values = array(values)
+    values = values::toArray()
 
     // run the sanitiers for sub properties, if there are any
     if (this.properties) for (let i = 0; i < values.length; i++) {
@@ -296,7 +314,9 @@ export class Property extends PropertyBase {
     }
 
     // only return an array if this is an array property
-    return array.unwrap(values, !this.array)
+    return this.array
+      ? values
+      : values::fromArray()
   }
 
   async validate (value, params) {
@@ -319,9 +339,9 @@ export class Property extends PropertyBase {
     if (!this.properties || value === null)
       return results
 
-    const values = array(value)
+    const values = value::toArray()
 
-    results = array(results)
+    results = results::toArray()
 
     for (let i = 0; i < values.length; i++) {
       const value = values[i]

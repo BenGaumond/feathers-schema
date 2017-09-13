@@ -1,4 +1,4 @@
-import { parseConfig, rangeValidatorFactory, array } from '../helper'
+import { parseConfig, rangeValidatorFactory, toArray, fromArray } from '../helper'
 import { assert } from '../types'
 import is from 'is-explicit'
 
@@ -34,21 +34,19 @@ export function format (...config) {
     if (!is(input))
       return PASS
 
-    const results = array(input)
+    const results = input::toArray()
       .map(item => exp.test(item) ? PASS : msg)
 
-    return array
-      .unwrap(
-        results,
-        !this.array || results.every(result => !result)
-      )
+    return !this.array || results.every(result => !result)
+      ? results::fromArray()
+      : results
+
   }
 }
 
 const EMAIL_EXP =
-  /* eslint-disable no-useless-escape */
+  // eslint-disable-next-line no-useless-escape
   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-  /* eslint-enable no-useless-escape */
 
 export function email (...config) {
 
@@ -56,7 +54,7 @@ export function email (...config) {
     msg: { type: String, default: 'Invalid email.' }
   })
 
-  return format.call(this, {
+  return this::format({
     exp: EMAIL_EXP,
     msg
   })
@@ -69,7 +67,7 @@ export function alphanumeric (...config) {
     msg: { type: String, default: 'May only contain letters and numbers.' }
   })
 
-  return format.call(this, {
+  return this::format({
     exp: ALPHA_NUMERIC_EXP,
     msg
   })
@@ -82,7 +80,7 @@ export function alpha (...config) {
     msg: { type: String, default: 'May only contain letters.' }
   })
 
-  return format.call(this, {
+  return this::format({
     exp: ALPHA_EXP,
     msg
   })
@@ -95,7 +93,7 @@ export function numeric (...config) {
     msg: { type: String, default: 'May only contain numbers.' }
   })
 
-  return format.call(this, {
+  return this::format({
     exp: NUMERIC_EXP,
     msg
   })
@@ -108,7 +106,7 @@ export function nospaces (...config) {
     msg: { type: String, default: 'May not contain any spaces.' }
   })
 
-  return format.call(this, {
+  return this::format({
     exp: NO_SPACES_EXP,
     msg
   })

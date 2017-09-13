@@ -1,4 +1,4 @@
-import { parseConfig, rangeValidatorFactory, array } from '../helper'
+import { parseConfig, rangeValidatorFactory, toArray, fromArray } from '../helper'
 import { assert } from '../types'
 import is from 'is-explicit'
 
@@ -24,13 +24,12 @@ export function even (...config) {
     if (!is(input))
       return PASS
 
-    const results = array(input)
+    const results = input::toArray()
       .map(item => item % 2 === 0 ? PASS : msg)
 
-    return array.unwrap(
-      results,
-      !this.array || results.every(result => !result)
-    )
+    return !this.array || results.every(result => !result)
+      ? results::fromArray()
+      : results
 
   }
 }
@@ -47,12 +46,11 @@ export function odd (...config) {
     if (!is(input))
       return PASS
 
-    const results = array(input)
+    const results = input::toArray()
       .map(item => item % 2 === 1 ? PASS : msg)
 
-    return array.unwrap(
-      results,
-      !this.array || results.every(result => !result)
-    )
+    return !this.array || results.every(result => !result)
+      ? results::fromArray()
+      : results
   }
 }

@@ -1,5 +1,5 @@
 import { assert } from '../types'
-import { array } from '../helper'
+import { toArray, fromArray } from '../helper'
 import is from 'is-explicit'
 
 function stringSanitizer (func) {
@@ -8,31 +8,30 @@ function stringSanitizer (func) {
 
   return input => {
 
-    input = array(input)
+    input = input::toArray()
       .filter(str => is(str, String))
       .map(func)
 
-    return array.unwrap(input, !this.array)
+    return this.array
+      ? input
+      : input::fromArray()
   }
 
 }
 
 export function lowercase () {
 
-  return stringSanitizer
-    .call(this, str => str.toLowerCase())
+  return this::stringSanitizer(str => str.toLowerCase())
 }
 
 export function uppercase () {
 
-  return stringSanitizer
-    .call(this, str => str.toUpperCase())
+  return this::stringSanitizer(str => str.toUpperCase())
 
 }
 
 export function trim () {
 
-  return stringSanitizer
-    .call(this, str => str.trim())
+  return this::stringSanitizer(str => str.trim())
 
 }

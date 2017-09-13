@@ -1,5 +1,5 @@
 import { ANY } from '../types'
-import array from './ensure-array'
+import toArray from './cast-array'
 import is from 'is-explicit'
 
 const EXPECTING_ARRAY = Symbol('expecting-array')
@@ -54,7 +54,7 @@ function parseDetail (detail) {
     } else
       type = sub
 
-    type = array(type)
+    type = type::toArray()
 
     if (!type.every(t => t === ANY || is(t, Function)))
       throw new Error(`detail type argument invalid: ${type}`)
@@ -70,7 +70,7 @@ function parseDetail (detail) {
 
 function containsArray (arr) {
 
-  return array(arr).some(v => is(v, Array))
+  return arr::toArray().some(v => is(v, Array))
 
 }
 
@@ -88,7 +88,7 @@ export default function parseConfig (input, detail) {
 
   const isObject = is.plainObject(input)
   if (!isObject)
-    input = array(input)
+    input = input::toArray()
 
   if (!isObject && detail[EXPECTING_ARRAY] && !containsArray(input))
     input = [input]

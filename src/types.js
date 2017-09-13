@@ -1,5 +1,5 @@
 import is from 'is-explicit'
-import { array } from './helper'
+import { toArray } from './helper'
 
 const { freeze } = Object
 
@@ -162,7 +162,7 @@ export function check (input, type, asArray) {
   else if (!asArray && isArray && isExplicit)
     return `Expected single ${name(type)}.`
 
-  const values = array(input)
+  const values = input::toArray()
 
   for (let i = 0; i < values.length; i++) {
 
@@ -208,7 +208,7 @@ export function cast (input, type, asArray) {
 
   const inputWasArray = is(input, Array)
 
-  const values = array(input)
+  const values = input::toArray()
   const output = []
 
   for (const value of values) {

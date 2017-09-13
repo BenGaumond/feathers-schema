@@ -1,5 +1,5 @@
-import { parseConfig, array } from '../helper'
-import { name, assert } from '../types'
+import { parseConfig, toArray, fromArray } from '../helper'
+import { name } from '../types'
 import is from 'is-explicit'
 
 // TODO parse sanitizer. Parse sanizer will only invoke when a value doesn't
@@ -15,7 +15,9 @@ export function _default (...config) {
     value: { type: [ Function, this.array ? Array : this.type ], required: true }
   })
 
-  value = array(value, this.array)
+  value = this.array
+    ? value::toArray()
+    : value
 
   if (this.array && is(value[0], Function))
     value = value[0]
@@ -63,7 +65,7 @@ export function service (...config) {
       return input
 
     const service = app.service(name)
-    const ids = array(input)
+    const ids = input::toArray()
     const query = {
       [service.id]: { $in: ids }
     }
@@ -87,7 +89,9 @@ export function service (...config) {
     }
 
     // only return an array if this is an array property
-    return array.unwrap(output, !this.array)
+    return this.array
+      ? output
+      : output::fromArray()
   }
 
 }
