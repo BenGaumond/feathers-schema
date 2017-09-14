@@ -70,16 +70,16 @@ export default function populateWithSchema (schema) {
       return
 
     const docs = isBulk
-      ? await service.find({ query })
+      ? await service.find({ query, paginate: false })
       : [ await service.get(id) ]
 
     for (let i = 0; i < docs.length; i++) {
 
       // Only need to fill properties if this is a patch request. If it's an update
       // we just need to convert the data and query to an array of documents with
-      // the data
+      // the their respective ids
       const doc = isUpdate
-        ? toObject(data)
+        ? data::toObject()
         : fillWithProperties(data, docs[i], schema.properties, isUpdate)
 
       // Place the id on the doc in case it's not included in the Schema

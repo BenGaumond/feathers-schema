@@ -104,7 +104,7 @@ export function unique (...config) {
     // we can supply a query.
     const query = path.length === 1 ? { [this.key]: input } : null
 
-    let docs = await service.find({query})
+    let docs = await service.find({ query, paginate: false })
 
     // if this an update or patch, we need to filter the existing doc from the
     // results, otherwise we'll get a false positive

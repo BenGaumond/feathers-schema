@@ -175,6 +175,40 @@ describe('Stock Server Sanitizations', () => {
 
     })
 
+    it('accounts for services with pagination configured', async () => {
+
+      const app = new App()
+      app.use('/users', memory({
+        paginate: {
+          default: 5,
+          max: 100
+        }
+      }))
+      app.use('/messages', memory())
+
+      const { hooks: messageHooks } = new Schema({ body: String, author: { Number, service: 'users' } })
+      const messages = app.service('messages')
+      messages.before({ create: messageHooks.sanitize })
+
+      const users = await app.service('users').create([
+        { name: 'Jake', gender: 'male' },
+        { name: 'Jerry', gender: 'male' },
+        { name: 'Jane', gender: 'female' },
+        { name: 'Jill', gender: 'female' },
+        { name: 'Xerxes', gender: 'other' }
+      ])
+
+      const [ xerxes ] = users.filter(user => user.name === 'Xerxes')
+
+      const message = await expect(messages.create({
+        body: 'Text Message',
+        author: xerxes.id
+      })).to.eventually.be.fulfilled
+
+      assert(message.author === xerxes.id, 'Message id was not set correctly on paginated users service')
+
+    })
+
     after(async () => app.end())
 
   })

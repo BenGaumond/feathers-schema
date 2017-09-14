@@ -4,6 +4,7 @@ import memory from 'feathers-memory'
 import chai, { assert, expect } from 'chai'
 import asPromised from 'chai-as-promised'
 import Schema from '../../src'
+import is from 'is-explicit'
 
 chai.use(asPromised)
 
@@ -126,6 +127,47 @@ describe('Hooks', () => {
       }
 
       assert.deepEqual(errors, [{ author: 'Required.' }], 'update was filled by populate')
+
+    })
+
+    it('accounts for services with pagination configured', async () => {
+
+      const app = new App()
+      app.use('/users', memory({
+        paginate: {
+          default: 5,
+          max: 100
+        }
+      }))
+
+      const users = app.service('users')
+
+      const { hooks } = new Schema({
+        name: String,
+        gender: { String, enum: [ 'male', 'female', 'other' ] }
+      })
+
+      users.before({
+        patch: [
+          hooks.populate,
+          hook => { populatedData = hook.data }
+        ]
+      })
+
+      await users.create([
+        { name: 'Jake', gender: 'male' },
+        { name: 'Jerry', gender: 'male' },
+        { name: 'Jane', gender: 'female' },
+        { name: 'Jill', gender: 'female' },
+        { name: 'Xerxes', gender: 'other' }
+      ])
+
+      await expect(users.patch(null, { name: '[Redacted]' })).to.eventually.be.fulfilled
+
+      assert(
+        is(populatedData, Array) && populatedData.every(doc => 'gender' in doc && 'id' in doc),
+        'populate data did not work as expected'
+      )
 
     })
 

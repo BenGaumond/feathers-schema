@@ -182,4 +182,45 @@ describe('Stock Server Validations', () => {
 
   })
 
+  it('works on services with pagination configured', async () => {
+
+    const app = new App()
+    app.use('/users', memory({
+      paginate: {
+        default: 5,
+        max: 100
+      }
+    }))
+
+    const users = app.service('users')
+
+    const { hooks } = new Schema({
+      email: { type: String, required: true, email: true, unique: true }
+    })
+
+    users.before({
+      create: [ ...hooks ],
+      patch: [ ...hooks ],
+      update: [ ...hooks ]
+    })
+
+    await users.create([
+      { email: 'jerry.smith@gmail.com' },
+      { email: 'john.smith@gmail.com' },
+      { email: 'jane.smith@gmail.com' },
+      { email: 'jake.smith@gmail.com' },
+      { email: 'gerry.smith@gmail.com' }
+    ])
+
+    let errors
+
+    try {
+      await users.create({ email: 'jerry.smith@gmail.com' })
+    } catch (err) {
+      errors = err.errors
+    }
+
+    assert.deepEqual(errors, { email: 'Must be unique.' })
+  })
+
 })

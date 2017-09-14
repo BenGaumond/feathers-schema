@@ -70,7 +70,7 @@ export function service (...config) {
       [service.id]: { $in: ids }
     }
 
-    const docs = await service.find({query})
+    const docs = await service.find({ query, paginate: false })
 
     const all = docs.map(doc => doc[service.id])
 
