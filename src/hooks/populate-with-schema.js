@@ -58,34 +58,22 @@ export default function populateWithSchema (schema) {
     // Populate needs to run on patch and update hooks to ensure that all fields
     // are filled, and that bulk update requests have been converted to arrays.
     // Create requests will be fine the way they are, bulk or not.
-    if (method === 'create')
+    if (method !== 'patch')
       return
 
     const isBulk = hook::isBulkRequest()
-
-    const isUpdate = method === 'update'
-
-    // We only need run populate on "update" if this is a multiple query
-    if (isUpdate && !isBulk)
-      return
 
     const docs = isBulk
       ? await service.find({ query, paginate: false })
       : [ await service.get(id) ]
 
     for (let i = 0; i < docs.length; i++) {
+      const doc = fillWithProperties(data, docs[i], schema.properties, service.id)
 
-      // Only need to fill properties if this is a patch request. If it's an update
-      // we just need to convert the data and query to an array of documents with
-      // the their respective ids
-      const doc = isUpdate
-        ? data::toObject()
-        : fillWithProperties(data, docs[i], schema.properties, isUpdate)
+      // Fill ID
+      doc[service.id] = docs[i][service.id]
 
-      // Place the id on the doc in case it's not included in the Schema
-      if (service.id in doc === false)
-        doc[service.id] = id || docs[i][service.id]
-
+      // Replace
       docs[i] = doc
     }
 

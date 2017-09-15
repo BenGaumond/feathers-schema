@@ -105,7 +105,7 @@ describe('Hooks', () => {
 
     })
 
-    it('Only dispatches during a patch hook or bulk update hook', async () => {
+    it('Only dispatches during a patch hook', async () => {
 
       let errors
       try {
@@ -117,20 +117,14 @@ describe('Hooks', () => {
       assert.deepEqual(errors, { author: 'Required.' }, 'update was filled by populate')
     })
 
-    it('On bulk update, only populates array with ids, not existing data', async () => {
+    it('Does not allow batch update', () => {
 
-      let errors = null
-      try {
-        await messages.update(null, { body: 'Message has been updated.' })
-      } catch (err) {
-        errors = err.errors
-      }
-
-      assert.deepEqual(errors, [{ author: 'Required.' }], 'update was filled by populate')
+      return expect(messages.update(null, { body: 'Message has been updated.' }))
+        .to.eventually.be.rejectedWith('You can not replace multiple instances. Did you mean \'patch\'?')
 
     })
 
-    it('accounts for services with pagination configured', async () => {
+    it('Accounts for services with pagination configured', async () => {
 
       const app = new App()
       app.use('/users', memory({

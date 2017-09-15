@@ -3,7 +3,7 @@ import { toArray, fromArray, isBulkRequest } from '../helper'
 import is from 'is-explicit'
 import { checkContext } from 'feathers-hooks-common'
 
-export default function populateWithSchema (schema) {
+export default function sanitizeWithSchema (schema) {
 
   if (!is(schema, Schema))
     throw new Error('\'sanitize-with-schema\' hook must be initialized with a schema object.')
@@ -19,6 +19,13 @@ export default function populateWithSchema (schema) {
 
     // account for bulk queries
     const isBulk = hook::isBulkRequest()
+
+    // bulk update requests arn't possible, so if the user accidentally input one,
+    // we let it go all the way through the hooks where it will be failed by feathers
+    // before it gets to the database adapter
+    if (isBulk && method === 'update')
+      return
+
     const asBulk = hook.data::toArray()
 
     for (let i = 0; i < asBulk.length; i++) {

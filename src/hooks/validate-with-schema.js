@@ -8,7 +8,7 @@ import { checkContext } from 'feathers-hooks-common'
 // Exports
 /******************************************************************************/
 
-export default function populateWithSchema (schema) {
+export default function validateWithSchema (schema) {
 
   if (!is(schema, Schema))
     throw new Error('\'validate-with-schema\' hook must be initialized with a schema object.')
@@ -23,6 +23,13 @@ export default function populateWithSchema (schema) {
       return
 
     const isBulk = hook::isBulkRequest()
+
+    // bulk update requests arn't possible, so if the user accidentally input one,
+    // we let it go all the way through the hooks where it will be failed by feathers
+    // before it gets to the database adapter
+    if (isBulk && method === 'update')
+      return
+
     const asBulk = hook.data::toArray()
     let errors = null
 
@@ -57,23 +64,19 @@ export default function populateWithSchema (schema) {
 
       throw new BadRequest('Validation failed.', { errors })
 
-    // multi create requests take an array of data, while multi patch and update
-    // requests do not. The act of populating and sanitizing essentially converts
-    // a patch and update request to make it look like a create request. Since we
-    // can't pass an array of sanitized data to a database adapter to patch or
-    // update, we manually apply each one here.
-    } else if (isBulk && (method === 'patch' || method === 'update')) {
+    // multi create requests take an array of data, while multi patch requests do
+    // not. The act of populating and sanitizing essentially converts a patch
+    // request to make it look like a create request. Since we can't pass an array
+    // of sanitized data to a database adapter, we manually patch each one here.
+    } else if (isBulk && method === 'patch') {
 
       hook.result = []
 
       for (const doc of asBulk) {
         const id = doc[service.id]
 
-        if (method === 'update')
-          console.log(doc)
-
         // TODO What if there's an error?
-        const result = await service[method](id, doc, { skipValidation: true })
+        const result = await service.patch(id, doc, { skipValidation: true })
         hook.result.push(result)
       }
 
