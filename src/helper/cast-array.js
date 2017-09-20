@@ -14,13 +14,24 @@ export function toArray (input) {
 
 }
 
-export function fromArray (input) {
+export function fromArray (...args) {
 
-  const value = this !== undefined ? this : input
+  let value, index
 
-  return is(value, Array)
-    ? value[0]
-    : value
+  if (this !== undefined) {
+    ([index = 0] = args)
+    value = this
+  } else
+    ([value, index = 0] = args)
+
+  if (!is(value, Array))
+    return value
+
+  // negatives allow indexing from the end of the array, -1 being the last item
+  if (index < 0)
+    index += value.length
+
+  return value[index]
 }
 
 export default toArray
