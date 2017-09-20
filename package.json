@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha --require babel-register --require babel-polyfill 'test/**/*test.js'",
     "test:watch": "mocha --require babel-register --watch --require babel-polyfill 'test/**/*test.js'",
-    "build": "rm -rf lib; mkdir lib; node_modules/.bin/babel src --out-dir lib --plugins transform-runtime",
+    "build": "rm -rf lib; mkdir lib; babel src --out-dir lib --plugins transform-runtime",
     "build:watch": "npm run build -- --watch",
     "prepublishOnly": "npm run test && npm run build"
   },
