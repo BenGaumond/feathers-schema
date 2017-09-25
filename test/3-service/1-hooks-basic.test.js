@@ -243,7 +243,12 @@ describe('Hooks', () => {
       messages.before({
         create: [
           messageSchema.hooks.sanitize,
-          hook => { sanitizedData = hook.data }
+          hook => { sanitizedData = { ...hook.data } }
+        ],
+        patch: [
+          messageSchema.hooks.populate,
+          messageSchema.hooks.sanitize,
+          hook => { sanitizedData = { ...hook.data } }
         ]
       })
 
@@ -306,6 +311,54 @@ describe('Hooks', () => {
       await run('find', {}, MethodErr)
       await run('get', 0, MethodErr)
       await run('remove', 0, MethodErr)
+
+    })
+
+    it('fills data with ids if they were removed by sanitization', async () => {
+
+      await messages.patch(id, { body: '[Redacted]' })
+
+      assert.equal(sanitizedData.id, id, 'id not placed in sanitized data')
+
+    })
+
+    it('does not fill ids if sanitize didn\'t remove them', async () => {
+
+      const userSchema = new Schema({
+        name: String,
+        id: Number
+      })
+
+      let sanitized
+
+      const app = new App()
+
+      app.use('/users', memory())
+      const users = app.service('users')
+      users.before({
+        create: [
+          userSchema.hooks.sanitize,
+          hook => { sanitized = { ...hook.data } }
+        ],
+        patch: [
+          userSchema.hooks.populate, // populate needed to provide data id to sanitize
+          userSchema.hooks.sanitize,
+          hook => { sanitized = { ...hook.data } }
+        ]
+      })
+
+      const ben = await users.create({
+        name: 'Ben',
+        id: '135'
+      })
+
+      assert(sanitized.id === 135, 'sanitize did not cast id to a number')
+
+      await users.patch(ben.id, {
+        name: 'Ben Gaumond'
+      })
+
+      assert.equal(sanitized.id, 135, 'sanitized id not kept')
 
     })
 

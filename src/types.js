@@ -233,7 +233,7 @@ export function cast (input, type, asArray) {
       if (is(casted, type) && casted !== '')
         output.push(casted)
 
-    } catch (err) {} // eslint-disable-line no-empty
+    } catch (err) { } // eslint-disable-line no-empty
   }
 
   // Whats this spaghetti? it satisfies all the edge cases:

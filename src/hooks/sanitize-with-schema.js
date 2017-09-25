@@ -40,8 +40,8 @@ export default function sanitizeWithSchema (schema) {
 
       const sanitized = await schema.sanitize(doc, arg)
 
-      // id fields would be removed by sanitization, so we'll add them back in
-      if (service.id in doc)
+      // if id field is not included in sanitization, we add it back in
+      if (service.id in doc && service.id in sanitized === false)
         sanitized[service.id] = doc[service.id]
 
       asBulk[i] = sanitized
