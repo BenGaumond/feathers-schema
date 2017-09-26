@@ -105,6 +105,160 @@ describe('Hooks', () => {
 
     })
 
+    it('Populates nested fields on Object properties without defined sub propeties', async () => {
+
+      const app = new App()
+      app.use('/products', memory())
+
+      const products = app.service('products')
+
+      const { hooks } = new Schema({
+        name: String,
+        version: { type: Number, range: ['>=', 0] },
+        meta: Object
+      })
+
+      products.before({
+        patch: [
+          hooks.populate,
+          hook => { populatedData = hook.data }
+        ]
+      })
+
+      const box = await products.create({
+        name: 'Box',
+        version: 0,
+        meta: {
+          sides: 6,
+          packingCode: 'non-fragile',
+          padding: {
+            bottom: 'cellophane'
+          },
+          colors: {
+            red: true,
+            blue: true
+          }
+        }
+      })
+
+      await products.patch(box.id, {
+        version: 1,
+        meta: {
+          sides: {
+            open: 6,
+            closed: 4
+          },
+          padding: {
+            top: 'foam'
+          },
+          colors: ['green', 'grey']
+        }
+      })
+
+      const should = {
+        name: 'Box',
+        version: 1,
+        meta: {
+          sides: {
+            open: 6,
+            closed: 4
+          },
+          packingCode: 'non-fragile',
+          padding: {
+            bottom: 'cellophane',
+            top: 'foam'
+          },
+          colors: ['green', 'grey']
+        },
+        id: box.id
+      }
+
+      assert.deepEqual(populatedData, should, 'Property merging did not work on Object type')
+    })
+
+    it('Populates nested fields ANY properties that happen to be Objects', async () => {
+
+      const app = new App()
+      app.use('/robots', memory())
+
+      const robots = app.service('robots')
+
+      const ANY = null
+
+      const { hooks } = new Schema({
+        name: String,
+        ai: ANY
+      })
+
+      robots.before({
+        patch: [
+          hooks.populate,
+          hook => { populatedData = hook.data }
+        ]
+      })
+
+      const df = await robots.create({
+        name: 'DeathFucker',
+        ai: 'remote controlled'
+      })
+
+      await robots.patch(df.id, {
+        name: 'ChessPlayer',
+        ai: {
+          nodes: 6,
+          handling: {
+            sprocket: 'retroactive',
+            bitmask: [1, 2, 4, 16, 64]
+          }
+        }
+      })
+
+      let should = {
+        name: 'ChessPlayer',
+        ai: {
+          nodes: 6,
+          handling: {
+            sprocket: 'retroactive',
+            bitmask: [1, 2, 4, 16, 64]
+          }
+        },
+        id: df.id
+      }
+
+      assert.deepEqual(should, populatedData, 'replacing ANY data did not work')
+
+      await robots.patch(df.id, {
+        ai: {
+          handling: {
+            bitmask: [1, 2, 4, 8],
+            avoidance: {
+              top: false,
+              back: true
+            }
+          }
+        }
+      })
+
+      should = {
+        name: 'ChessPlayer',
+        ai: {
+          nodes: 6,
+          handling: {
+            sprocket: 'retroactive',
+            bitmask: [1, 2, 4, 8],
+            avoidance: {
+              top: false,
+              back: true
+            }
+          }
+        },
+        id: df.id
+      }
+
+      assert.deepEqual(should, populatedData, 'object merging on ANY type did not work')
+
+    })
+
     it('Only dispatches during a patch hook', async () => {
 
       let errors
@@ -120,7 +274,8 @@ describe('Hooks', () => {
     it('Does not allow batch update', () => {
 
       return expect(messages.update(null, { body: 'Message has been updated.' }))
-        .to.eventually.be.rejectedWith('You can not replace multiple instances. Did you mean \'patch\'?')
+        .to.eventually.be
+        .rejectedWith('You can not replace multiple instances. Did you mean \'patch\'?')
 
     })
 

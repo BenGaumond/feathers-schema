@@ -1,6 +1,9 @@
 import Schema from '../schema'
 import is from 'is-explicit'
+
 import { fromArray, isBulkRequest } from '../helper'
+import { ANY } from '../types'
+
 import { checkContext } from 'feathers-hooks-common'
 
 /******************************************************************************/
@@ -26,16 +29,66 @@ function fillWithProperties (data, fill = {}, properties) {
     if (key in data === false)
       data[key] = fill[key] === undefined ? null : fill[key]
 
-    if (property.array || !property.properties || !is.plainObject(fill[key]))
+    if (property.array || !is.plainObject(fill[key]))
       continue
 
-    data[key] = fillWithProperties(data[key], fill[key], property.properties)
+    const isGeneric = !property.properties || property.type === ANY
+    if (isGeneric)
+      data[key] = fillWithGeneric(data[key], fill[key])
+    else
+      data[key] = fillWithProperties(data[key], fill[key], property.properties)
 
   }
 
   return data
 
 }
+
+// If the schema is of type Object, but it has no sub properties, we want the
+// populate behaviour to be as similar as possible to if it had. There are a couple
+// of subtle differences, but if people arn't using explicit types for their sub
+// properties, they shouldn't care anyway.
+
+function fillWithGeneric (data, fill = {}) {
+
+  data = data::toObject()
+
+  for (const key in fill) {
+
+    if (key in data === false)
+      data[key] = fill[key] === undefined ? null : fill[key]
+
+    if (!is(data[key], Array) && is.plainObject(fill[key]))
+      data[key] = fillWithGeneric(data[key], fill[key])
+
+  }
+
+  return data
+
+}
+
+// TODO delete, old version
+// function fillWithProperties (data, fill = {}, properties) {
+//
+//   data = data::toObject()
+//
+//   for (const property of properties) {
+//
+//     const { key } = property
+//
+//     if (key in data === false)
+//       data[key] = fill[key] === undefined ? null : fill[key]
+//
+//     if (property.array || !property.properties || !is.plainObject(fill[key]))
+//       continue
+//
+//     data[key] = fillWithProperties(data[key], fill[key], property.properties)
+//
+//   }
+//
+//   return data
+//
+// }
 
 /******************************************************************************/
 // Exports
