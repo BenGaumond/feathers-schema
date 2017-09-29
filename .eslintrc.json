@@ -12,6 +12,7 @@
     "no-var": "error",
     "prefer-const": "error",
     "padded-blocks": "off",
+    "key-spacing": "off",
     "curly": ["error", "multi"]
   }
 }

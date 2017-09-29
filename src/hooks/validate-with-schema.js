@@ -15,11 +15,11 @@ export default function validateWithSchema (schema) {
 
   return async function (hook) {
 
-    const { method, id, app, service, params: { skipValidation } } = hook
+    const { method, id, app, service, params: { $skipSchema } } = hook
 
     checkContext(hook, 'before', ['create', 'update', 'patch'], 'validate-with-schema')
 
-    if (skipValidation)
+    if ($skipSchema)
       return
 
     const isBulk = hook::isBulkRequest()
@@ -76,7 +76,7 @@ export default function validateWithSchema (schema) {
         const id = doc[service.id]
 
         // TODO What if there's an error?
-        const result = await service.patch(id, doc, { skipValidation: true })
+        const result = await service.patch(id, doc, { $skipSchema: true })
         hook.result.push(result)
       }
 

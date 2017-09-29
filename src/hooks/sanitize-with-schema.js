@@ -10,11 +10,11 @@ export default function sanitizeWithSchema (schema) {
 
   return async function (hook) {
 
-    const { method, id, app, service, params: { skipValidation } } = hook
+    const { method, id, app, service, params: { $skipSchema } } = hook
 
     checkContext(hook, 'before', ['create', 'update', 'patch'], 'sanitize-with-schema')
 
-    if (skipValidation)
+    if ($skipSchema)
       return
 
     // account for bulk queries

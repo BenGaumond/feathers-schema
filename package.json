@@ -4,11 +4,15 @@
   "description": "Model structure/validation for feathers.js",
   "main": "lib",
   "scripts": {
-    "test": "mocha --require babel-register --require babel-polyfill 'test/**/*test.js'",
-    "test:watch": "mocha --require babel-register --watch --require babel-polyfill 'test/**/*test.js'",
+    "test": "mocha --opts .mocha.opts test/**/*.test.js",
     "build": "rm -rf lib; mkdir lib; babel src --out-dir lib --plugins transform-runtime",
     "build:watch": "npm run build -- --watch",
-    "prepublishOnly": "npm run test && npm run build"
+    "lint": "eslint src --fix",
+    "release:prerelease": "npm version prerelease && npm publish --tag pre",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish",
+    "prepublishOnly": "npm run lint && npm run test && npm run build"
   },
   "repository": {
     "type": "git",

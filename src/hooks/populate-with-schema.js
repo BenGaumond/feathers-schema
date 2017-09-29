@@ -67,29 +67,6 @@ function fillWithGeneric (data, fill = {}) {
 
 }
 
-// TODO delete, old version
-// function fillWithProperties (data, fill = {}, properties) {
-//
-//   data = data::toObject()
-//
-//   for (const property of properties) {
-//
-//     const { key } = property
-//
-//     if (key in data === false)
-//       data[key] = fill[key] === undefined ? null : fill[key]
-//
-//     if (property.array || !property.properties || !is.plainObject(fill[key]))
-//       continue
-//
-//     data[key] = fillWithProperties(data[key], fill[key], property.properties)
-//
-//   }
-//
-//   return data
-//
-// }
-
 /******************************************************************************/
 // Exports
 /******************************************************************************/
@@ -101,11 +78,11 @@ export default function populateWithSchema (schema) {
 
   return async function (hook) {
 
-    const { method, data, service, id, params: { query, skipValidation } } = hook
+    const { method, data, service, id, params: { query, $skipSchema } } = hook
 
     checkContext(hook, 'before', ['create', 'update', 'patch'], 'populate-with-schema')
 
-    if (skipValidation)
+    if ($skipSchema)
       return
 
     // Populate needs to run on patch and update hooks to ensure that all fields
