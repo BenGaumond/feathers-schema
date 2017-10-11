@@ -12,7 +12,7 @@ import is from 'is-explicit'
 export function _default (...config) {
 
   let { value } = parseConfig(config, {
-    value: { type: [ Function, this.array ? Array : this.type ], required: true }
+    value: { type: [ Function, this.array ? Array : this.type ] }
   })
 
   value = this.array
@@ -22,8 +22,11 @@ export function _default (...config) {
   if (this.array && is(value[0], Function))
     value = value[0]
 
+  if (this.type && !this.array && !is(value, Function) && !is(value, this.type))
+    throw new Error(`default value must be a ${name(this.type)}`)
+
   if (this.type && this.array && is(value, Array) && !value.every(v => is(v, this.type)))
-    throw new Error(`Must be an Array of ${name(this.type)}`)
+    throw new Error(`default value must be an Array of ${name(this.type)}`)
 
   const getDefault = is(value, Function)
     ? value

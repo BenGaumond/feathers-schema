@@ -27,7 +27,7 @@ describe('Types', () => {
 
       types.resetToDefault()
 
-      expect(() => new Schema({ id: ObjectID })).to.throw(`Malformed property 'id': Could not convert to Type notation.`)
+      expect(() => new Schema({ id: ObjectID })).to.throw(`On property 'id': Could not convert to Type notation.`)
 
       types.setCustom(ObjectID)
 

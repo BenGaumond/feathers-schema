@@ -123,7 +123,7 @@ export default function parseConfig (input, detail) {
       config[key] = value
 
     else if (required)
-      throw new Error(`${key} config property is required for this validator.`)
+      throw new Error(`'${key}' config property is required for this validator.`)
 
   }
 

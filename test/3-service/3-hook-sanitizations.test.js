@@ -104,7 +104,7 @@ describe('Stock Server Sanitizations', () => {
 
     it('Requires a service name.', () => {
       expect(() => new Schema({ author: { type: Number, service: true } }))
-        .to.throw('name config property is required for this validator.')
+        .to.throw('\'name\' config property is required for this validator')
     })
 
     it('Filters out ids that don\'t exist in a given service.', async () => {

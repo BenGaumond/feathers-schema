@@ -25,6 +25,13 @@ const spreadable = {
   }
 }
 
+class MalformedPropertyError extends Error {
+  constructor (key, msg) {
+    super((key ? `On property '${key}': ` : '') + msg)
+    this.name = 'MalformedPropertyError'
+  }
+}
+
 /******************************************************************************/
 // Constants and Symbols
 /******************************************************************************/
@@ -219,15 +226,26 @@ export class Property extends PropertyBase {
 
     // Determine if array
     this.array = is(input, Array)
+
+    const altArrayTypeDefined = is.plainObject(input) && is(input.type, Array)
+    if (altArrayTypeDefined && this.array)
+      throw new MalformedPropertyError(this.key, 'Either the definition can be wrapped in an Array or the type, not both.')
+
     // if an empty array was supplied, the rest of the definition is pretty simple
     if (this.array && input.length === 0)
       input = { type: ANY }
 
-    else if (this.array && input.length > 1)
-      throw new Error(`Malformed property '${this.key}': Properties defined as Arrays should only contain a single element.`)
+    else if ((this.array && input.length > 1) || (altArrayTypeDefined && input.type.length > 1))
+      throw new MalformedPropertyError(this.key, 'Properties defined as Arrays should only contain a single element.')
 
     else if (this.array)
       input = input[0]
+
+    else if (altArrayTypeDefined) {
+      const { type, ...other } = input
+      this.array = true
+      input = { type: type[0], ...other }
+    }
 
     // Determin type
     // schemas and properties should be composable
@@ -238,7 +256,7 @@ export class Property extends PropertyBase {
       input = { type: input }
 
     if (!is.plainObject(input))
-      throw new Error(`Malformed property '${this.key}': Could not convert to Type notation.`)
+      throw new MalformedPropertyError(this.key, 'Could not convert to Type notation.')
 
     // try to get type from shortcut type notation, eg:
     // property: { String } insteadof property: { type: String }
@@ -252,7 +270,7 @@ export class Property extends PropertyBase {
       // if we've gotten here, there are multiple shortcut properties eg:
       // property: { String, Number, ANY }
       if (input.type || input.type === ANY)
-        throw new Error(`Multiple types defined: ${name(input.type)}`)
+        throw new MalformedPropertyError(this.key, `Multiple types defined; ${name(input.type)}`)
 
       input.type = type
       delete input[key]
@@ -265,7 +283,7 @@ export class Property extends PropertyBase {
 
     this.type = input.type
     if (!ALL.includes(this.type))
-      throw new Error(`Malformed property: ${name(this.type)} is not a valid type.`)
+      throw new MalformedPropertyError(this.key, `${name(this.type)} is not a valid type.`)
 
     this::applyDefinition(input)
   }

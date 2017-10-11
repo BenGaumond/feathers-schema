@@ -109,6 +109,11 @@ describe('Property Definitions', () => {
       return equivalentValidatorOutput(original, plain)
     })
 
+    it('Alt Type notation: \t{ prop: { type: [Number] } } ', () => {
+      const plain = createValidator({ prop: { type: [Number] } })
+      return equivalentValidatorOutput(original, plain)
+    })
+
   })
 
   describe('Nested Property:', () => {
