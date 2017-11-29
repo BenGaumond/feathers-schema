@@ -1,8 +1,7 @@
 src
 test
 .babelrc
-.eslintrc.js
+.eslintrc.json
+.eslintignore
 .gitignore
-api-intro.md
-api.md
 playground.js
