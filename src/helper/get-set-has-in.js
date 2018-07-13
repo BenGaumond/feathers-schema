@@ -8,7 +8,7 @@ function smartIn (obj, paths, smart) {
   if (!is(obj, Object))
     throw new Error('expects an object as first argument.')
 
-  if (is(paths, String, Symbol))
+  if (is(paths, [String, Symbol]))
     paths = [paths]
 
   if (!is(paths, Array))

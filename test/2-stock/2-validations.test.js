@@ -48,7 +48,7 @@ describe('Stock General Validators', () => {
       const values = ['whatever', null, 'string', undefined]
 
       for (const value of values)
-        await runValidator(schema, value, !is(value))
+        await runValidator(schema, value, !is.defined(value))
     })
 
     it('optionally takes a predicate function that returns weather value is required.', async () => {
@@ -141,7 +141,7 @@ describe('Stock General Validators', () => {
       const values = [null, undefined, 1, 2, 3, 10, Infinity]
 
       for (const value of values) {
-        const expected = is(value) ? !acceptedNums.includes(value) : PASS
+        const expected = is.defined(value) ? !acceptedNums.includes(value) : PASS
         await runValidator(schema, value, expected)
       }
 
@@ -273,7 +273,7 @@ describe('Stock String Validators', () => {
       const values = ['895-1029', '019-1298', 'i dont wanna give my phone number', 'i forgot my phone number', null]
 
       for (const value of values) {
-        const expected = is(value) ? !phoneRegex.test(value) : PASS
+        const expected = is.defined(value) ? !phoneRegex.test(value) : PASS
         await runValidator(schema, value, expected)
       }
 

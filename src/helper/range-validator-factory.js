@@ -18,7 +18,7 @@ const factory = (getValue, getResult, failMsg) => {
   return input => {
 
     // null or undefined values pass validation
-    if (!is(input))
+    if (!is.defined(input))
       return PASS
 
     const isArray = is(input, Array)
@@ -77,9 +77,8 @@ export default function rangeValidatorFactory (configArgs, getValue = DEFAULT_GE
   const isMax = is(max, Number)
   const isMin = is(min, Number)
   const isValue = is(value, Number)
-  const isCompareDefined = is(compare)
+  const isCompareDefined = is.defined(compare)
   const isCompareValid = COMPARERS.includes(compare)
-  // const isMsgDefined = is(msg)
   const isMsgACompareValue = COMPARERS.includes(msg)
 
   // set default compare value, and sort msg/compare mixups

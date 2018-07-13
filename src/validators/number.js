@@ -21,7 +21,7 @@ export function even (...config) {
   })
 
   return input => {
-    if (!is(input))
+    if (!is.defined(input))
       return PASS
 
     const results = input::toArray()
@@ -43,7 +43,7 @@ export function odd (...config) {
   })
 
   return input => {
-    if (!is(input))
+    if (!is.defined(input))
       return PASS
 
     const results = input::toArray()

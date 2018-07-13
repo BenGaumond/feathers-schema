@@ -24,7 +24,7 @@ const DEFAULT_TYPES = freeze([
 
 const DEFAULT_HANDLERS = new Map()
 
-DEFAULT_HANDLERS.set(String, value => is(value) ? `${value}` : null)
+DEFAULT_HANDLERS.set(String, value => is.defined(value) ? `${value}` : null)
 
 DEFAULT_HANDLERS.set(Number, value => {
 
@@ -38,7 +38,7 @@ DEFAULT_HANDLERS.set(Boolean, value => !!value)
 
 DEFAULT_HANDLERS.set(Date, value => {
 
-  if (!is(value, String, Number))
+  if (!is(value, [String, Number]))
     return null
 
   const casted = new Date(value)
@@ -84,7 +84,7 @@ export function setCustom (Type, method) {
     throw new Error('type argument must be a constructor.')
 
   // If a method wasn't supplied we'll supply a default
-  if (!is(method))
+  if (!is.defined(method))
     // If the type is a default type
     method = DEFAULT_TYPES.includes(Type)
       // We reset to the default handler for that type. This way, users can
@@ -153,7 +153,7 @@ export function check (input, type, asArray) {
 
   const isArray = is(input, Array)
   const any = type === ANY
-  const isDefined = is(input)
+  const isDefined = is.defined(input)
   const isExplicit = !any && isDefined
 
   if (asArray && !isArray && isExplicit)
@@ -214,7 +214,7 @@ export function cast (input, type, asArray) {
   for (const value of values) {
 
     // empty values, or values that shouldn't be cast at all, are returned as a null
-    if (!is(value) || value === '' || is(value, Symbol, Function) || Number.isNaN(value))
+    if (!is.defined(value) || value === '' || is(value, [Symbol, Function]) || Number.isNaN(value))
       continue
 
     // If the value is already of the type specified, the value is considered casted.
@@ -251,7 +251,7 @@ export function cast (input, type, asArray) {
 
   return asArray && (inputWasArray || output.length > 0)
     ? output
-    : is(output[0])
+    : is.defined(output[0])
       ? output[0]
       : null
 }

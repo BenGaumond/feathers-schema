@@ -31,7 +31,7 @@ export function format (...config) {
 
   return input => {
 
-    if (!is(input))
+    if (!is.defined(input))
       return PASS
 
     const results = input::toArray()

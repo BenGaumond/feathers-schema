@@ -14,7 +14,7 @@ export default function isBulkRequest (input) {
   const isCreate = method === 'create'
 
   const isBulkCreate = !isView && isCreate && is(data, Array)
-  const isBulkEditOrDelete = !isView && !isCreate && !is(id)
+  const isBulkEditOrDelete = !isView && !isCreate && !is.defined(id)
 
   return isBulkCreate || isBulkEditOrDelete
 

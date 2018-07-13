@@ -304,7 +304,7 @@ export class Property extends PropertyBase {
       values = await sanitizer(values, params)
 
     // if sanitization returned a null value, we don't need to continue
-    if (!is(values))
+    if (!is.defined(values))
       return values
 
     values = values::toArray()

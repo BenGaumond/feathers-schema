@@ -14,7 +14,7 @@ export function required (...config) {
   return async (value, params) => await condition(value, params)
 
     // condition says value is required
-    ? is(value)
+    ? is.defined(value)
 
       // value exists but this property is an array
       ? this.array
@@ -49,7 +49,7 @@ export function _enum (...config) {
   // null values pass
   return input => {
 
-    if (!is(input))
+    if (!is.defined(input))
       return PASS
 
     // in case of array, we check every item to see if it's included in the enumeration
@@ -94,7 +94,7 @@ export function unique (...config) {
     // Also, this validator depends on access to server parameters.
     // if this validator is being run client side, they wont exist.
     // In that case, this validator will just pass.
-    if (!is(input) || !is(service, Object))
+    if (!is.defined(input) || !is(service, Object))
       return PASS
 
     // unfortunately, feathers cannot query nested properties.

@@ -13,10 +13,10 @@ function valueValid (value, types, throwKey = null) {
   if (types.includes(ANY))
     return throwKey ? void 0 : true
 
-  if (!is(value))
+  if (!is.defined(value))
     return throwKey ? void 0 : false
 
-  const valid = is(value, ...types)
+  const valid = is(value, types)
 
   if (!throwKey)
     return valid
@@ -116,10 +116,10 @@ export default function parseConfig (input, detail) {
 
     }
 
-    if (!is(value) && is(_default))
+    if (!is.defined(value) && is.defined(_default))
       value = _default
 
-    if (is(value))
+    if (is.defined(value))
       config[key] = value
 
     else if (required)

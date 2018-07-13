@@ -32,7 +32,7 @@ export function _default (...config) {
     ? value
     : () => value
 
-  return async (input, params) => !is(input) || (is(input, Array) && input.length === 0)
+  return async (input, params) => !is.defined(input) || (is(input, Array) && input.length === 0)
     ? getDefault(params)
     : input
 
@@ -64,7 +64,7 @@ export function service (...config) {
     // Also, this sanitizer depends on access to server parameters.
     // if this validator is being run client side, they wont exist.
     // In that case, this sanitizer wont mutate the input.
-    if (!is(input) || !is(app, Object))
+    if (!is.defined(input) || !is(app, Object))
       return input
 
     const service = app.service(name)
